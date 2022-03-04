@@ -20,7 +20,7 @@ class predictor_lstm(nn.Module):
         intialization of the states
     """
     
-    def __init__(self, input_dim, out_dim, hidden_dim, num_layers=1, mode="zeros", batch_size =100):
+    def __init__(self, input_dim, out_dim, hidden_dim, num_layers=1, mode="zeros", batch_size =40):
         """ Module initializer """
         assert mode in ["zeros", "random", "learned"]
         super().__init__()
@@ -106,7 +106,7 @@ class latent_lstm(nn.Module):
         intialization of the states
     """
     
-    def __init__(self, input_dim, out_dim, hidden_dim, num_layers=1, mode="zeros", batch_size=100):
+    def __init__(self, input_dim, out_dim, hidden_dim, num_layers=1, mode="zeros", batch_size=40):
         """ Module initializer """
         assert mode in ["zeros", "random", "learned"]
         super().__init__()
