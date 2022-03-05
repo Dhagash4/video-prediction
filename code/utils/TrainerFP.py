@@ -144,7 +144,9 @@ class TrainerFP:
     def train(self, train_loader, val_loader, test_loader, num_epochs=300, device= "cpu", init_step=0):
         """ Training the models for several iterations """
         
-        iter = 0
+        niter = 0
+        test_batch = next(iter(val_loader))
+        test_batch = test_batch.to(device)
         for i in range(num_epochs):
             self.predictor.train()
             self.posterior.train()
@@ -160,10 +162,10 @@ class TrainerFP:
                 mse, kld = self.train_one_step(seqs)
                 epoch_mse+=mse
                 epoch_kld+=kld
-                progress_bar.set_description(f"Epoch {i+1} Iter {iter+1}: mse loss {epoch_mse:.5f}, kld los {epoch_kld: .5f} ")
+                progress_bar.set_description(f"Epoch {i+1} Iter {niter+1}: mse loss {epoch_mse:.5f}, kld los {epoch_kld: .5f} ")
                 
                 # write mse and kld losses to tensorboard after every iteration
-                iter+=1
+                niter+=1
 
 
             #after every epoch calculate losses for validation and training datasets
@@ -173,10 +175,9 @@ class TrainerFP:
             
             if(i%10==0):
 
-                test_batch = next(iter(val_loader))
                 predited_batch = self.generate_future_sequences(test_batch)
                 save_gif_batch(test_batch, predited_batch, nsamples = 5, text=f"epoch{i+1}",show=False)
-                save_gif_batch(test_batch, predited_batch, nsamples = 5, text=f"epoch{i+1}",show=False)
+                save_grid_batch(test_batch, predited_batch, nsamples = 5, text=f"epoch{i+1}",show=False)
 
 
  
