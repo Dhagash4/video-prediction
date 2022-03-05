@@ -14,6 +14,7 @@ def save_pred_gifs(pred_batch, nsamples=5, text = None, batch_first = False, sho
         pred_batch = pred_batch.permute(1,0,2,3,4)
 
     pred_batch = pred_batch.cpu().numpy() * 255.0  
+    pred_batch = pred_batch.squeeze(2)
 
     temp_path = os.path.join(os.getcwd(), "temp")
     if not os.path.exists(temp_path):
@@ -31,7 +32,7 @@ def save_pred_gifs(pred_batch, nsamples=5, text = None, batch_first = False, sho
             # full.append(widgets.Image(value=open(os.path.join(temp_path, f"full_frames{i+1}.gif"), 'rb').read()))
             pred.append(widgets.Image(value=open(os.path.join(temp_path, f"{text}.gif"), 'rb').read()))
 
-        print("------------Past Frames (First 10 frames of the sequence)----------------")
+        print("------------predicted Frames (predicted 10 frames of the sequence)----------------")
         display(HBox(pred))
 
 def save_grid_batch(real_batch, pred_batch=None, nsamples = 5, text = None, batch_first = False, show = False):  
