@@ -132,3 +132,4 @@ dmypy.json
 #Data Folder
 data/
 tboard_logs/
+temp/
