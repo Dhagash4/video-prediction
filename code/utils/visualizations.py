@@ -24,13 +24,13 @@ def save_pred_gifs(pred_batch, nsamples=5, text = None, batch_first = False, sho
     for i in range(nsamples):
         video = pred_batch[:,i,:]
         # imageio.mimsave(os.path.join(temp_path, f"full_frames{i+1}.gif"),video.astype(np.uint8),"GIF",fps=5)
-        imageio.mimsave(os.path.join(temp_path, f"{text}.gif"),video.astype(np.uint8),"GIF",fps=5)
+        imageio.mimsave(os.path.join(temp_path, f"predicted_frames{i+1}_{text}.gif"),video.astype(np.uint8),"GIF",fps=5)
     
     if show:
         pred =[] 
         for i in range(nsamples):
             # full.append(widgets.Image(value=open(os.path.join(temp_path, f"full_frames{i+1}.gif"), 'rb').read()))
-            pred.append(widgets.Image(value=open(os.path.join(temp_path, f"{text}.gif"), 'rb').read()))
+            pred.append(widgets.Image(value=open(os.path.join(temp_path, f"predicted_frames{i+1}_{text}.gif"), 'rb').read()))
 
         print("------------predicted Frames (predicted 10 frames of the sequence)----------------")
         display(HBox(pred))

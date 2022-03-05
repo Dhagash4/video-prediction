@@ -181,7 +181,7 @@ class TrainerFP:
             if(i%10==0):
 
                 all_gen, gt_seq, pred_seq = self.generate_future_sequences(test_batch)
-                save_pred_gifs(pred_seq, nsamples = 5, text=f"predicted_frames_epoch_{i+1}",show=False)
+                save_pred_gifs(pred_seq, nsamples = 5, text=f"epoch_{i+1}",show=False)
                 save_grid_batch(test_batch, all_gen, nsamples = 5, text=f"grid_epoch_{i+1}",show=False)
 
 
