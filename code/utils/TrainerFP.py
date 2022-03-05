@@ -113,7 +113,7 @@ class TrainerFP:
         all_gen.append(x_in)
         for i in range(1, self.past_frames+self.future_frames):
             h = self.encoder(x_in)
-            if self.last_frame_Skip or i < self.past_frames:
+            if self.last_frame_skip or i < self.past_frames:
                 h, skip = h
             else:
                 h, _ = h
