@@ -8,6 +8,32 @@ from IPython.display import display
 from ipywidgets import widgets, HBox, VBox, Layout, Box
 
 
+def save_pred_gifs(pred_batch, nsamples=5, text = None, batch_first = False, show = False):
+
+    if batch_first:
+        pred_batch = pred_batch.permute(1,0,2,3,4)
+
+    pred_batch = pred_batch.cpu().numpy() * 255.0  
+
+    temp_path = os.path.join(os.getcwd(), "temp")
+    if not os.path.exists(temp_path):
+        os.mkdir(temp_path)
+
+    # box_layout = Layout(flex_flow='row')
+    for i in range(nsamples):
+        video = pred_batch[:,i,:]
+        # imageio.mimsave(os.path.join(temp_path, f"full_frames{i+1}.gif"),video.astype(np.uint8),"GIF",fps=5)
+        imageio.mimsave(os.path.join(temp_path, f"{text}.gif"),video.astype(np.uint8),"GIF",fps=5)
+    
+    if show:
+        pred =[] 
+        for i in range(nsamples):
+            # full.append(widgets.Image(value=open(os.path.join(temp_path, f"full_frames{i+1}.gif"), 'rb').read()))
+            pred.append(widgets.Image(value=open(os.path.join(temp_path, f"{text}.gif"), 'rb').read()))
+
+        print("------------Past Frames (First 10 frames of the sequence)----------------")
+        display(HBox(pred))
+
 def save_grid_batch(real_batch, pred_batch=None, nsamples = 5, text = None, batch_first = False, show = False):  
     '''
     sample_batch: batch of sequences shape:(seq_len, batch_size, nc, h, w)
@@ -55,11 +81,11 @@ def save_grid_batch(real_batch, pred_batch=None, nsamples = 5, text = None, batc
         # plt.show()
 
     if show:
-        plt.savefig(os.path.join(temp_path, f"generated_sample_{text}.png"))
+        plt.savefig(os.path.join(temp_path, f"{text}.png"))
         plt.show() 
         plt.close(fig) 
     else:
-        plt.savefig(os.path.join(temp_path, f"generated_sample_{text}.png"))
+        plt.savefig(os.path.join(temp_path, f"{text}.png"))
         plt.close(fig) 
 
 

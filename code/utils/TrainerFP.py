@@ -136,10 +136,14 @@ class TrainerFP:
                 gt_seq.append(test_batch[i])
                 all_gen.append(x_in) 
         
-        gt_seq.extend(pred_seq)
-        predicted_batch = torch.stack(gt_seq)
+        # gt_seq.extend(pred_seq)
+        # predicted_batch = torch.stack(gt_seq)
 
-        return predicted_batch
+        all_gen = torch.stack(all_gen)
+        gt_seq = torch.stack(gt_seq)
+        pred_seq = torch.stack(pred_seq)
+
+        return all_gen, gt_seq, pred_seq
 
     def train(self, train_loader, val_loader, test_loader, num_epochs=300, device= "cpu", init_step=0):
         """ Training the models for several iterations """
@@ -147,6 +151,7 @@ class TrainerFP:
         niter = 0
         test_batch = next(iter(val_loader))
         test_batch = test_batch.to(device)
+        save_gif_batch(test_batch, nsamples=5, text = "real", show=False)
         for i in range(num_epochs):
             self.predictor.train()
             self.posterior.train()
@@ -175,9 +180,9 @@ class TrainerFP:
             
             if(i%10==0):
 
-                predited_batch = self.generate_future_sequences(test_batch)
-                save_gif_batch(test_batch, predited_batch, nsamples = 5, text=f"epoch{i+1}",show=False)
-                save_grid_batch(test_batch, predited_batch, nsamples = 5, text=f"epoch{i+1}",show=False)
+                all_gen, gt_seq, pred_seq = self.generate_future_sequences(test_batch)
+                save_pred_gifs(pred_seq, nsamples = 5, text=f"predicted_frames_epoch_{i+1}",show=False)
+                save_grid_batch(test_batch, all_gen, nsamples = 5, text=f"grid_epoch_{i+1}",show=False)
 
 
  
