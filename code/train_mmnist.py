@@ -21,13 +21,17 @@ data_dir = "data"
 
 TRAINING_LOGS = os.path.join(os.getcwd(), "tboard_logs", f"{data}_{datetime.datetime.now().strftime('%Y-%m-%d')}")
 MODEL_SAVE = os.path.join(os.getcwd(), "checkpoints", f"{data}_{datetime.datetime.now().strftime('%Y-%m-%d')}")
-shutil.rmtree(TRAINING_LOGS)
-shutil.rmtree(MODEL_SAVE)
+
 
 if not os.path.exists(TRAINING_LOGS):
     os.makedirs(TRAINING_LOGS)
+else:
+    shutil.rmtree(TRAINING_LOGS)
+
 if not os.path.exists(MODEL_SAVE):
     os.makedirs(MODEL_SAVE)
+else:
+    shutil.rmtree(MODEL_SAVE)
 mmnist_data_dir = os.path.join(data_dir,data)
 
 # train_loader, val_loader,test_loader = MMNIST(mmnist_data_dir, seq_first = True, device=device)
