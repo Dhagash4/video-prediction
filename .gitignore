@@ -130,8 +130,11 @@ dmypy.json
 
 #Data Files
 *.npy
+*.ubyte
+*.gz
 
 #Data Folder
 tboard_logs/
 temp/
 checkpoints/
+data/MMNIST/MNIST/
