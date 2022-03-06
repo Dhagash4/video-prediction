@@ -18,7 +18,7 @@ class TrainerFP:
         assert writer is not None, f"Tensorboard writer not set..."
         assert save_path is not None, f"Checkpoint saving directory not set..."
         
-        self.past_frames = 5
+        self.past_frames = 10
         self.future_frames = 10 
         self.z_dim = latent_dim
         self.g_dim = embed_dim
