@@ -133,3 +133,4 @@ dmypy.json
 data/
 tboard_logs/
 temp/
+checkpoints/
