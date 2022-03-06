@@ -18,7 +18,7 @@ class TrainerFP:
         assert writer is not None, f"Tensorboard writer not set..."
         assert save_path is not None, f"Checkpoint saving directory not set..."
         
-        self.past_frames = 10
+        self.past_frames = 5
         self.future_frames = 10 
         self.z_dim = latent_dim
         self.g_dim = embed_dim
@@ -173,6 +173,8 @@ class TrainerFP:
         testing_batch_generator = self.get_testing_batch(val_loader)
         test_batch = next(testing_batch_generator)
         
+        # test_batch = next(iter(val_loader))
+        # test_batch = test_batch.to(device)
         
 
         for i in range(num_epochs):
@@ -185,9 +187,10 @@ class TrainerFP:
             epoch_loss =0
 
             progress_bar = tqdm(range(600), total=600)
-
             for j in progress_bar:
                 seqs = next(training_batch_generator)
+            # progress_bar = tqdm(enumerate(train_loader), total=len(train_loader))
+            # for _,seqs in progress_bar:
                 seqs = seqs.to(device)
                 mse, kld = self.train_one_step(seqs)
                 epoch_mse+=mse
@@ -209,10 +212,10 @@ class TrainerFP:
 
             #save models and gifs after every 10 epoch
             
-            if(i%10==0):
+            if(i%100==0) or (i == num_epochs-1):
                 save_gif_batch(test_batch, nsamples=5, text = "real", show=False)
                 all_gen, gt_seq, pred_seq = self.generate_future_sequences(test_batch)
-                grid = show_grid(test_batch,all_gen,nsamples=5)
+                grid = show_grid(test_batch,all_gen,nsamples=5,pred_frames=self.past_frames)
                 self.writer.add_image('images', grid, global_step=niter)
                 save_pred_gifs(pred_seq, nsamples = 5, text=f"epoch_{i+1}",show=False)
                 torch.save({

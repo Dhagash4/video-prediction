@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-def MMNIST(data_dir, batch_size = 40, seq_first=True, device = "cpu"):
+def MMNIST(data_dir, batch_size = 40, seq_first=True, device = "cpu",overfit= True):
     
     #dowload data if not downloaded
     file_path = os.path.join(data_dir, 'mnist_test_seq.npy')
@@ -19,9 +19,17 @@ def MMNIST(data_dir, batch_size = 40, seq_first=True, device = "cpu"):
     batch_size=batch_size
 
     # Train, Test, Validation splits
-    train_data = MovingMNIST[:8000]         
-    val_data = MovingMNIST[8000:9000]       
-    test_data = MovingMNIST[8000:10000]    
+    if not overfit:
+
+        train_data = MovingMNIST[:8000]         
+        val_data = MovingMNIST[8000:9000]       
+        test_data = MovingMNIST[8000:10000]   
+    else:
+
+        train_data = MovingMNIST[:5]
+        val_data = MovingMNIST[:5]       
+        test_data = MovingMNIST[:5]   
+     
 
     def collate(batch):
 
