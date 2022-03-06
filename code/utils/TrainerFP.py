@@ -46,7 +46,7 @@ class TrainerFP:
         self.predictor_optimizer = torch.optim.Adam(self.predictor.parameters(), lr=self.lr, betas = (0.9, 0.999))
         self.posterior_optimizer = torch.optim.Adam(self.posterior.parameters(), lr=self.lr, betas = (0.9, 0.999))
         self.encoder_optimizer = torch.optim.Adam(self.encoder.parameters(), lr=self.lr, betas = (0.9, 0.999))
-        self.decoder_optimizer = torch.optim.Adam(self.posterior.parameters(), lr=self.lr, betas = (0.9, 0.999))
+        self.decoder_optimizer = torch.optim.Adam(self.decoder.parameters(), lr=self.lr, betas = (0.9, 0.999))
 
         self.mse_loss = nn.MSELoss()
     
@@ -65,10 +65,10 @@ class TrainerFP:
     def train_one_step(self, x):
         """ Training both models for one optimization step """
         
-        self.predictor.zero_grad()
-        self.posterior.zero_grad()
-        self.encoder.zero_grad()
-        self.decoder.zero_grad()
+        self.predictor_optimizer.zero_grad()
+        self.posterior_optimizer.zero_grad()
+        self.encoder_optimizer.zero_grad()
+        self.decoder_optimizer.zero_grad()
 
         self.predictor.h, self.predictor.c = self.predictor.init_state(b_size=self.batch_size, device=self.device)
         self.posterior.h, self.posterior.c = self.posterior.init_state(b_size=self.batch_size, device=self.device)
@@ -212,12 +212,14 @@ class TrainerFP:
 
             #save models and gifs after every 10 epoch
             
-            if(i%100==0) or (i == num_epochs-1):
+            if(i%20==0) or (i == num_epochs-1):
+
                 save_gif_batch(test_batch, nsamples=5, text = "real", show=False)
                 all_gen, gt_seq, pred_seq = self.generate_future_sequences(test_batch)
                 grid = show_grid(test_batch,all_gen,nsamples=5,pred_frames=self.past_frames)
                 self.writer.add_image('images', grid, global_step=niter)
                 save_pred_gifs(pred_seq, nsamples = 5, text=f"epoch_{i+1}",show=False)
+
                 torch.save({
                     'encoder': self.encoder,
                     'decoder':self.decoder,

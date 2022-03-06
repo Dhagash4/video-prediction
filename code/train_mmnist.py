@@ -35,15 +35,15 @@ train_data= MovingMNIST(train=True,data_root=mmnist_data_dir,seq_len=15)
 test_data = MovingMNIST(train=False,data_root=mmnist_data_dir,seq_len=15)
 train_loader = DataLoader(train_data,
                           num_workers=0,
-                          batch_size=40,
+                          batch_size=50,
                           shuffle=True,
                           drop_last=True,
                           pin_memory=True)
 test_loader = DataLoader(test_data,
                          num_workers=0,
-                         batch_size=40,
+                         batch_size=50,
                          shuffle=True,
                          drop_last=True,
                          pin_memory=True)   
-trainer = TrainerFP(device=device,writer=TRAINING_LOGS,save_path=MODEL_SAVE,batch_size=40)
-trainer.train(train_loader, test_loader,test_loader, device = device,num_epochs=600)
+trainer = TrainerFP(device=device,writer=TRAINING_LOGS,save_path=MODEL_SAVE,batch_size=50)
+trainer.train(train_loader, test_loader, test_loader, device = device,num_epochs=600)
