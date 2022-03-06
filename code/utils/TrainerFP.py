@@ -5,6 +5,7 @@ import torch.nn as nn
 from tqdm import tqdm
 from utils.visualizations import *
 from torch.utils.tensorboard import SummaryWriter
+import utils.utils as utils
 import shutil
 
 class TrainerFP:
@@ -12,9 +13,10 @@ class TrainerFP:
     Class for initializing network and training it
     """
     def __init__(self, train_type = "FIxed Prior", batch_size =40, embed_dim=128, hidden_dim=256,
-                latent_dim=10, img_size=64, device="cpu", writer=None):
+                latent_dim=10, img_size=64, device="cpu", writer=None,save_path = None):
         """ Initialzer """
         assert writer is not None, f"Tensorboard writer not set..."
+        assert save_path is not None, f"Checkpoint saving directory not set..."
         
         self.past_frames = 10
         self.future_frames = 10 
@@ -26,6 +28,7 @@ class TrainerFP:
         self.batch_size = batch_size
         self.last_frame_skip = True
         self.device = device
+        self.save_path = save_path
         self.writer = SummaryWriter(writer)
 
         # if train_type == "Fixed Prior" and img_size==64:
@@ -116,7 +119,7 @@ class TrainerFP:
         all_gen.append(x_in)
         for i in range(1, self.past_frames+self.future_frames):
             h = self.encoder(x_in)
-            if self.last_frame_Skip or i < self.past_frames:
+            if self.last_frame_skip or i < self.past_frames:
                 h, skip = h
             else:
                 h, _ = h
@@ -148,13 +151,30 @@ class TrainerFP:
 
         return all_gen, gt_seq, pred_seq
 
+    def get_training_batch(self,train_loader,dtype=torch.cuda.FloatTensor):
+        while True:
+            for sequence in train_loader:
+                batch = utils.normalize_data(dtype, sequence)
+                batch = torch.stack(batch)
+                yield batch
+
+    def get_testing_batch(self,test_loader,dtype=torch.cuda.FloatTensor):
+        while True:
+            for sequence in test_loader:
+                batch = utils.normalize_data(dtype, sequence)
+                batch = torch.stack(batch)
+                yield batch 
+
     def train(self, train_loader, val_loader, test_loader, num_epochs=300, device= "cpu", init_step=0):
         """ Training the models for several iterations """
         
         niter = 0
-        test_batch = next(iter(val_loader))
-        test_batch = test_batch.to(device)
-        save_gif_batch(test_batch, nsamples=5, text = "real", show=False)
+        training_batch_generator = self.get_training_batch(train_loader)
+        testing_batch_generator = self.get_testing_batch(val_loader)
+        test_batch = next(testing_batch_generator)
+        
+        
+
         for i in range(num_epochs):
             self.predictor.train()
             self.posterior.train()
@@ -164,8 +184,10 @@ class TrainerFP:
             epoch_kld=0
             epoch_loss =0
 
-            progress_bar = tqdm(enumerate(train_loader), total=len(train_loader))
-            for _, seqs in progress_bar:
+            progress_bar = tqdm(range(600), total=600)
+
+            for j in progress_bar:
+                seqs = next(training_batch_generator)
                 seqs = seqs.to(device)
                 mse, kld = self.train_one_step(seqs)
                 epoch_mse+=mse
@@ -175,24 +197,29 @@ class TrainerFP:
                 # write mse and kld losses to tensorboard after every iteration
                 self.writer.add_scalar(f'MSE Loss',mse, global_step=niter)
                 self.writer.add_scalar(f'KLD Loss',kld, global_step=niter)
-                self.writer.add_scalars(f'Comb_Loss/Losses', {
-                            'MSE': mse,
-                            'KLD': kld}, niter)    
+                self.writer.add_scalars(f'Comb_Loss/Losses', {'MSE':mse,'KLD': kld}, niter)    
                 niter+=1
 
 
             #after every epoch calculate losses for validation and training datasets
+            #to add validation step
+
+            print(f"Training Loss:\nMSE: {epoch_mse}, KLD: {epoch_kld}\n")
             
 
             #save models and gifs after every 10 epoch
             
             if(i%10==0):
-
+                save_gif_batch(test_batch, nsamples=5, text = "real", show=False)
                 all_gen, gt_seq, pred_seq = self.generate_future_sequences(test_batch)
-                #torch image 
-                save_pred_gifs(pred_seq, nsamples = 5, text=f"predicted_frames_epoch_{i+1}",show=False)
-                save_grid_batch(test_batch, all_gen, nsamples = 5, text=f"grid_epoch_{i+1}",show=False)
-
-
- 
-                # 
+                grid = show_grid(test_batch,all_gen,nsamples=5)
+                self.writer.add_image('images', grid, global_step=niter)
+                save_pred_gifs(pred_seq, nsamples = 5, text=f"epoch_{i+1}",show=False)
+                torch.save({
+                    'encoder': self.encoder,
+                    'decoder':self.decoder,
+                    'predictor': self.predictor,
+                    'posterior': self.posterior},
+                    f'{self.save_path}/model_{i}.pth')
+                
+            self.writer.close()
