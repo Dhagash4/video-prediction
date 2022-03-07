@@ -20,7 +20,7 @@ class predictor_lstm(nn.Module):
         intialization of the states
     """
     
-    def __init__(self, input_dim, out_dim, hidden_dim, num_layers=1, mode="zeros", batch_size =40):
+    def __init__(self, input_dim, out_dim, hidden_dim, num_layers=1, mode="zeros", batch_size =40, device = "cuda"):
         """ Module initializer """
         assert mode in ["zeros", "random", "learned"]
         super().__init__()
@@ -30,7 +30,7 @@ class predictor_lstm(nn.Module):
         self.num_layers = num_layers
         self.mode = mode
         self.batch_size = batch_size
-       
+        self.device = device
         # for embedding rows into vector representations
         self.enc = nn.Linear(in_features=input_dim, out_features=hidden_dim)
 
@@ -42,6 +42,7 @@ class predictor_lstm(nn.Module):
               nn.Linear(in_features=hidden_dim, out_features=out_dim),
               nn.Tanh())
         
+        self.h, self.c = self.init_state()
         return
     
     
@@ -49,7 +50,7 @@ class predictor_lstm(nn.Module):
         """ Forward pass through model """
         
         # b_size, _ = x.shape
-        h, c = self.init_state(b_size=self.batch_size, device=x.device) 
+#         h, c = self.init_state(b_size=self.batch_size, device=x.device) 
         
         # embedding rows
         # x_rowed = x.view(b_size, n_channels*n_rows, n_cols)
@@ -62,8 +63,8 @@ class predictor_lstm(nn.Module):
         # feeding LSTM. Does everything for you
         h_input = embeddings
         for i in range(self.num_layers):
-            h[i], c[i] = self.lstm[i](h_input.clone(), (h[i].clone(),c[i].clone()))
-            h_input = h[i].clone()
+            self.h[i], self.c[i] = self.lstm[i](h_input.clone(), (self.h[i].clone(), self.c[i].clone()))
+            h_input = self.h[i].clone()
         
         # classifying
         # y = self.out(lstm_out[:, -1, :])  # feeding only output at last layer
@@ -72,19 +73,19 @@ class predictor_lstm(nn.Module):
         return y
     
         
-    def init_state(self, b_size, device):
+    def init_state(self):
         """ Initializing hidden and cell state """
         if(self.mode == "zeros"):
-            h = torch.zeros(self.num_layers, b_size, self.hidden_dim).to(device)
-            c = torch.zeros(self.num_layers, b_size, self.hidden_dim).to(device)
+            h = torch.zeros(self.num_layers, self.batch_size, self.hidden_dim)
+            c = torch.zeros(self.num_layers, self.batch_size, self.hidden_dim)
         elif(self.mode == "random"):
-            h = torch.randn(self.num_layers, b_size, self.hidden_dim).to(device)
-            c = torch.randn(self.num_layers, b_size, self.hidden_dim).to(device)
+            h = torch.randn(self.num_layers, self.batch_size, self.hidden_dim)
+            c = torch.randn(self.num_layers, self.batch_size, self.hidden_dim)
         # elif(self.mode == "learned"):
         #     h = self.learned_h.repeat(1, b_size, 1)
         #     c = self.learned_c.repeat(1, b_size, 1)
-        # h = h.clone().to(device)
-        # c = c.clone().to(device)
+        h = h.to(self.device)
+        c = c.to(self.device)
         return h, c
 
 
@@ -106,7 +107,7 @@ class latent_lstm(nn.Module):
         intialization of the states
     """
     
-    def __init__(self, input_dim, out_dim, hidden_dim, num_layers=1, mode="zeros", batch_size=40):
+    def __init__(self, input_dim, out_dim, hidden_dim, num_layers=1, mode="zeros", batch_size=40, device = "cuda"):
         """ Module initializer """
         assert mode in ["zeros", "random", "learned"]
         super().__init__()
@@ -116,6 +117,7 @@ class latent_lstm(nn.Module):
         self.num_layers = num_layers
         self.mode = mode
         self.batch_size = batch_size
+        self.device = device
        
         # for embedding rows into vector representations
         self.enc = nn.Linear(in_features=input_dim, out_features=hidden_dim)
@@ -127,6 +129,7 @@ class latent_lstm(nn.Module):
         self.mu = nn.Linear(in_features=hidden_dim, out_features=out_dim)
         self.log_var =  nn.Linear(in_features=hidden_dim, out_features=out_dim)
         
+        self.h, self.c = self.init_state()
         return
     
 
@@ -139,7 +142,7 @@ class latent_lstm(nn.Module):
     
     def forward(self, x):
         """ Forward pass through model """
-        h, c = self.init_state(b_size=self.batch_size, device=x.device) 
+#         h, c = self.init_state(b_size=self.batch_size, device=x.device) 
         
         # embedding rows
         # x_rowed = x.view(b_size, n_channels*n_rows, n_cols)
@@ -150,8 +153,8 @@ class latent_lstm(nn.Module):
         # feeding LSTM. Does everything for you
         h_input = embeddings
         for i in range(self.num_layers):
-            h[i], c[i] = self.lstm[i](h_input.clone(), (h[i].clone(),c[i].clone()))
-            h_input = h[i].clone()
+            self.h[i], self.c[i] = self.lstm[i](h_input.clone(), (self.h[i].clone(),self.c[i].clone()))
+            h_input = self.h[i].clone()
                                     
         # classifying
         # y = self.o  ut(lstm_out[:, -1, :])  # feeding only output at last layer
@@ -163,17 +166,17 @@ class latent_lstm(nn.Module):
         return z, mu, log_var
     
         
-    def init_state(self, b_size, device):
+    def init_state(self):
         """ Initializing hidden and cell state """
         if(self.mode == "zeros"):
-            h = torch.zeros(self.num_layers, b_size, self.hidden_dim).to(device)
-            c = torch.zeros(self.num_layers, b_size, self.hidden_dim).to(device)
+            h = torch.zeros(self.num_layers, self.batch_size, self.hidden_dim)
+            c = torch.zeros(self.num_layers, self.batch_size, self.hidden_dim)
         elif(self.mode == "random"):
-            h = torch.randn(self.num_layers, b_size, self.hidden_dim).to(device)
-            c = torch.randn(self.num_layers, b_size, self.hidden_dim).to(device)
+            h = torch.randn(self.num_layers, self.batch_size, self.hidden_dim)
+            c = torch.randn(self.num_layers, self.batch_size, self.hidden_dim)
         # elif(self.mode == "learned"):
         #     h = self.learned_h.repeat(1, b_size, 1)
         #     c = self.learned_c.repeat(1, b_size, 1)
-        # h = h.to(device)
-        # c = c.to(device)
+        h = h.to(self.device)
+        c = c.to(self.device)
         return h, c
