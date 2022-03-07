@@ -74,14 +74,6 @@ class Resnet18Encoder(nn.Module):
         self.input_channels = in_size[0]
         self.kernels = kernels
 
-        # if self.in_size[1] == 128:
-        #     self.c1 = nn.Sequential(
-        #         nn.Conv2d(in_channels=self.input_channels, out_channels=self.kernels[0], kernel_size=3, padding=1, stride=1, bias = False),
-        #         nn.BatchNorm2d(self.kernels[0]),
-        #         get_act(self.activation, inplace=True),
-        #         nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        #     )
-        # else:
         self.c1 = nn.Sequential(
             nn.Conv2d(in_channels=self.input_channels, out_channels=self.kernels[0], kernel_size=3, padding=1, stride=1, bias = False),
             nn.BatchNorm2d(self.kernels[0]),
@@ -229,14 +221,11 @@ class Resnet18Decoder(nn.Module):
         self.layer4 = self._make_layer(2*self.kernels[-1], self.kernels[-2],  upsample=True)
         self.layer3 = self._make_layer(2*self.kernels[-2], self.kernels[-3],  upsample=True)
         self.layer2 = self._make_layer(2*self.kernels[-3], self.kernels[-4], upsample=True)
-        self.layer1 = self._make_layer(2*self.kernels[-4], self.kernels[-4], upsample=False)
-
-        # self.conv1 = nn.ConvTranspose2d(in_channels=64, out_channels=self.input_channels, kernel_size=3, padding=1, output_padding=1,stride=2, bias = False)
-        # self.up = nn.UpsamplingNearest2d(scale_factor=2)
-
+        self.layer1 = self._make_layer(2*self.kernels[-4], self.kernels[-4], upsample=True)
+        
+        self.upsamp = nn.UpsamplingNearest2d(scale_factor=2)
         self.upc6 = nn.Sequential(
-            nn.UpsamplingNearest2d(scale_factor=2),
-            nn.ConvTranspose2d(4*64, self.input_channels, kernel_size=3, padding=1, stride=1),
+            nn.ConvTranspose2d(2*64, self.input_channels, kernel_size=3, padding=1, stride=1),
             nn.Sigmoid()
             )
 
@@ -261,18 +250,35 @@ class Resnet18Decoder(nn.Module):
         input, encoded_skip = x
 
         up1 = self.upc1(input.view(-1, self.latent_dim, 1, 1))
+#         print(f"up1:{up1.shape}")
 
         if self.layer5 is not None:
+#             print("encoded_skip 5:", encoded_skip[5].shape)
             up1 = self.layer5(torch.cat([up1, encoded_skip[5]], 1))
             # encoded_skip.append(x)
-
+#         print(f"-up1:{up1.shape}")
         l4 = self.layer4(torch.cat([up1, encoded_skip[4]], 1))
+#         print("encoded_skip 4:", encoded_skip[4].shape)
+#         print("l4:", l4.shape)
+        
         l3 = self.layer3(torch.cat([l4, encoded_skip[3]], 1))
+#         print("encoded_skip 3:", encoded_skip[3].shape)
+#         print("l3:", l3.shape)
+        
         l2 = self.layer2(torch.cat([l3, encoded_skip[2]], 1))
+#         print("encoded_skip 2:", encoded_skip[2].shape)
+#         print("l2:", l2.shape)
+        
         l1 = self.layer1(torch.cat([l2, encoded_skip[1]], 1))
+#         print("encoded_skip 1:", encoded_skip[1].shape)
+#         print("l1:", l1.shape)
 
         # x = torch.sigmoid(self.conv1(x))
         # x = F.interpolate(x, scale_factor=2)
-        out = self.upc6(torch.cat([l1, encoded_skip[0]], 1))
+#         print("encoded_skip 0:", encoded_skip[0].shape)
+        out = self.upc6(torch.cat([l1, self.upsamp(encoded_skip[0])], 1))
+#         print("encoded_skip 0:", encoded_skip[0].shape)
+#         print("out:", out.shape)
+#         print("l1:", l1.shape)
         # x = x.view(-1, 1, 128, 128)
         return out
