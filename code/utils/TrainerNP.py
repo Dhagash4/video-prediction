@@ -10,7 +10,7 @@ class TrainerNP:
     """
     Class for initializing network and training it
     """
-    def __init__(self, arch_type = "dcgan", lstm_type = "lstm", batch_size =40, embed_dim=128, hidden_dim=256,
+    def __init__(self, arch_type = "dcgan", lstm_type = "lstm", batch_size =20, embed_dim=128, hidden_dim=256,
                  img_size=(1,64,64), device="cpu", writer=None):
         """ Initialzer """
         # assert writer is not None, f"Tensorboard writer not set..."
@@ -53,7 +53,7 @@ class TrainerNP:
         self.encoder_optimizer.zero_grad()
         self.decoder_optimizer.zero_grad()
 
-        self.predictor.h, self.predictor.c = self.predictor.init_state(b_size=self.batch_size, device=self.device)
+#         self.predictor.h, self.predictor.c = self.predictor.init_state(b_size=self.batch_size, device=self.device)
         # print("hello")
 
         h_seq = [self.encoder(x[i]) for i in range(self.past_frames+self.future_frames)]
@@ -123,6 +123,8 @@ class TrainerNP:
         
         niter = 0
         test_batch = next(iter(val_loader))
+        if self.img_size[1] == 128:
+            test_batch = test_batch[0]
         test_batch = test_batch.to(device)
         save_gif_batch(test_batch, nsamples=5, text = "real", show=False)
         for i in range(num_epochs):
@@ -133,6 +135,8 @@ class TrainerNP:
 
             progress_bar = tqdm(enumerate(train_loader), total=len(train_loader))
             for _, seqs in progress_bar:
+                if self.img_size[1] == 128:
+                    seqs = seqs[0]
                 seqs = seqs.to(device)
                 mse = self.train_one_step(seqs)
                 epoch_mse+=mse
