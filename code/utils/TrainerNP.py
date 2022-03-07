@@ -33,7 +33,8 @@ class TrainerNP:
             self.decoder = DCGANDecoder(out_size=self.img_size)
         
         if lstm_type == "lstm":
-            self.predictor = predictor_lstm(self.g_dim, self.g_dim, self.hidden_dim, num_layers=2, batch_size=self.batch_size)
+            self.predictor = predictor_lstm(self.g_dim, self.g_dim, self.hidden_dim,
+                                            num_layers=2, batch_size=self.batch_size, device =self.device)
         
         self.encoder = self.encoder.to(device)
         self.decoder = self.decoder.to(device)
@@ -53,7 +54,7 @@ class TrainerNP:
         self.encoder_optimizer.zero_grad()
         self.decoder_optimizer.zero_grad()
 
-#         self.predictor.h, self.predictor.c = self.predictor.init_state(b_size=self.batch_size, device=self.device)
+        self.predictor.h, self.predictor.c = self.predictor.init_state()
         # print("hello")
 
         h_seq = [self.encoder(x[i]) for i in range(self.past_frames+self.future_frames)]
@@ -61,7 +62,6 @@ class TrainerNP:
         mse =0
         kld = 0
         for i in range(1,self.past_frames+self.future_frames):
-            h_target = h_seq[i][0]
             if self.last_frame_skip or i<self.past_frames:
                 h, skip = h_seq[i-1]
             else:
@@ -84,7 +84,8 @@ class TrainerNP:
         self.predictor.eval()
         self.encoder.eval()
         self.decoder.eval()
-
+        
+        self.predictor.h, self.predictor.c = self.predictor.init_state()
         all_gen = []
         gt_seq = []
         pred_seq = []
