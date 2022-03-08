@@ -13,14 +13,14 @@ from torchvision.utils import save_image
 
 def get_act(act_name, inplace = True):
     """ Gettign activation given name """
-    assert act_name in ["ReLU", "Sigmoid", "Tanh"]
+    assert act_name in ["ReLU", "Sigmoid", "Tanh" ]
     activation = getattr(nn, act_name)
     return activation(inplace = True)
 
 
 class ResidualBlockEncoder(nn.Module):
     
-    def __init__(self, input_channels, output_channels, activation = "ReLU", downsample = False):
+    def __init__(self, input_channels, output_channels, activation = "LeakyReLU", downsample = False):
 
         super().__init__()
         self.activation = activation
@@ -33,7 +33,8 @@ class ResidualBlockEncoder(nn.Module):
 
         self.conv1 = nn.Conv2d(in_channels=input_channels, out_channels=output_channels, kernel_size=3, padding=1, stride=stride, bias = False)
         self.bn1 = nn.BatchNorm2d(output_channels)
-        self.relu = get_act(self.activation, inplace=True)
+#         self.relu = get_act(self.activation, inplace=True)
+        self.relu = nn.LeakyReLU(0.2, inplace=True)
 
         self.conv2 = nn.Conv2d(in_channels=output_channels, out_channels=output_channels, kernel_size=3, padding=1, stride=1, bias = False)
         self.bn2 = nn.BatchNorm2d(output_channels)
@@ -58,12 +59,13 @@ class ResidualBlockEncoder(nn.Module):
             x = self.downsample(x)
 
         out = y+x
-        out = get_act(self.activation, inplace=True)(out)
+#         out = get_act(self.activation, inplace=True)(out)
+        out = self.relu(out)
         return out
     
 class Resnet18Encoder(nn.Module):
     
-    def __init__(self, in_size = (1,64,64), kernels = [64, 128, 256, 512], latent_dim = 128, activation = "ReLU"):
+    def __init__(self, in_size = (1,64,64), kernels = [64, 128, 256, 512], latent_dim = 128, activation = "LeakyReLU"):
  
         super().__init__()
 
@@ -77,7 +79,7 @@ class Resnet18Encoder(nn.Module):
         self.c1 = nn.Sequential(
             nn.Conv2d(in_channels=self.input_channels, out_channels=self.kernels[0], kernel_size=3, padding=1, stride=1, bias = False),
             nn.BatchNorm2d(self.kernels[0]),
-            get_act(self.activation, inplace=True),
+            nn.LeakyReLU(0.2, inplace=True),
             nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
         )
 
@@ -162,7 +164,7 @@ class ResidualBlockDecoder(nn.Module):
 
         self.conv2 = nn.Conv2d(in_channels=input_channels, out_channels=input_channels, kernel_size=3, padding=1, stride=1, bias = False)
         self.bn2 = nn.BatchNorm2d(input_channels)
-        self.relu = get_act(activation, inplace=True)
+        self.relu = nn.LeakyReLU(0.2, inplace=True)
 
         if(stride==1):
             self.conv1 = nn.Conv2d(in_channels=input_channels, out_channels=output_channels, kernel_size=3, padding=1, stride=1, bias = False)
@@ -190,7 +192,7 @@ class ResidualBlockDecoder(nn.Module):
             x = self.upsample(x)
 
         out = y+x
-        out = get_act(self.activation, inplace=True)(out)
+        out = self.relu(out)
         return out
     
 class Resnet18Decoder(nn.Module):
