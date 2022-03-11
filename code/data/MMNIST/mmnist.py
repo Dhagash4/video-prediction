@@ -19,17 +19,13 @@ def MMNIST(data_dir, batch_size = 40, seq_first=True, device = "cpu",overfit= Tr
     batch_size=batch_size
 
     # Train, Test, Validation splits
-    if not overfit:
+ 
 
-        train_data = MovingMNIST[:8000]         
-        val_data = MovingMNIST[8000:9000]       
-        test_data = MovingMNIST[8000:10000]   
-    else:
-
-        train_data = MovingMNIST[:5]
-        val_data = MovingMNIST[:5]       
-        test_data = MovingMNIST[:5]   
-     
+    # train_data = MovingMNIST[:8000]         
+    # val_data = MovingMNIST[8000:9000]       
+    # test_data = MovingMNIST[8000:10000]
+    test_data = MovingMNIST[:]   
+    
 
     def collate(batch):
 
@@ -43,15 +39,15 @@ def MMNIST(data_dir, batch_size = 40, seq_first=True, device = "cpu",overfit= Tr
 
 
     # Training Data Loader
-    train_loader = DataLoader(train_data, shuffle=True, 
-                            batch_size=batch_size, collate_fn=collate)
+    # train_loader = DataLoader(train_data, shuffle=True, 
+    #                         batch_size=batch_size, collate_fn=collate)
 
-    # Validation Data Loader
-    val_loader = DataLoader(val_data, shuffle=True, 
-                            batch_size=batch_size, collate_fn=collate)                        
+    # # Validation Data Loader
+    # val_loader = DataLoader(val_data, shuffle=True, 
+    #                         batch_size=batch_size, collate_fn=collate)                        
 
     # Test Data Loader
     test_loader = DataLoader(test_data, shuffle=True, 
                             batch_size=batch_size, collate_fn=collate)
     
-    return train_loader, val_loader, test_loader
+    return test_loader#train_loader, val_loader

@@ -1,11 +1,10 @@
-
 from tkinter import image_names
 import torch
 import torch.nn as nn
 import torchvision
 class ConvLSTMCell(nn.Module):
 
-    def __init__(self, input_dim, hidden_dim, kernel_size, bias, image_size = (128,8,8), mode="zeros", device = "cpu"):
+    def __init__(self, input_dim, hidden_dim, kernel_size, bias, image_size = (128,8,8), mode="zeros", device="cpu"):
         super(ConvLSTMCell, self).__init__()
 
         self.input_dim = input_dim
@@ -101,7 +100,7 @@ class predictor_lstm(nn.Module):
                                           kernel_size=self.kernels[i],
                                           bias=self.bias,
                                           image_size = self.image_size,
-                                          device = device))
+                                          device = self.device))
 
         self.conv_lstms = nn.ModuleList(conv_lstms)
 
@@ -110,37 +109,47 @@ class predictor_lstm(nn.Module):
         return
     
     
-    def forward(self, x, hidden_state=None):
+    def forward(self, x):
        
-        x=x.unsqueeze(dim=1)
-        cur_layer_input = x
-        output_list = []
-        x_len = x.size(1)
+        # x=x.unsqueeze(dim=1)
+        # cur_layer_input = x
+        # output_list = []
+        # x_len = x.size(1)
 
         # iterating over no of layers
+        h_input = x
+        
         for i in range(self.num_layers):
 
-            h, c = self.hidden_state[i]
-            each_layer_output = []
-            # iterating over sequence length
-            for t in range(x_len):
-                h, c = self.conv_lstms[i](x=cur_layer_input[:, t, :, :, :],
-                                                 cur_state=[h, c])
-                each_layer_output.append(h)
+            self.hidden_state[i] = self.conv_lstms[i](x= h_input, cur_state = self.hidden_state[i])
+            
+            h,c  = self.hidden_state[i]
+            h_input = h
 
-            stacked_layer_output = torch.stack(each_layer_output, dim=1)
-            cur_layer_input = stacked_layer_output
+        return h_input
+        # for i in range(self.num_layers):
+        #     h, c = self.hidden_state[i]
 
-            output_list.append(stacked_layer_output)
+        #     h,c = self.conv_lstms[i](x)
+        #     # each_layer_output = []
+        #     # iterating over sequence length
+        #     # for t in range(x_len):
+            
+        #         # each_layer_output.append(h)
 
-        if not self.return_all_layers:
-            output_list = output_list[-1:]
+        #     # stacked_layer_output = torch.stack(each_layer_output, dim=1)
+        #     # cur_layer_input = stacked_layer_output
 
-        # batch_shape = output_list[-1].shape[0]
+        #     # output_list.append(stacked_layer_output)
 
-        final_out = output_list[-1]
+        # # if not self.return_all_layers:
+        # #     output_list = output_list[-1:]
 
-        return final_out
+        # # batch_shape = output_list[-1].shape[0]
+
+        # final_out = output_list[-1].squeeze(1)
+
+        # return final_out
     
         
     def _init_hidden(self):
@@ -148,3 +157,5 @@ class predictor_lstm(nn.Module):
         for i in range(self.num_layers):
             init_states.append(self.conv_lstms[i].init_state(self.batch_size, self.image_size))
         return init_states
+
+

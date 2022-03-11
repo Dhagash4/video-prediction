@@ -1,0 +1,27 @@
+experiment:
+    id: stat_net
+
+##Data
+data:
+    dataset: "MMNIST"  #['MMNIST','KTH']
+    seq: 20
+
+##Training
+train:
+    n_gpus: 1
+    num_workers: 8
+    max_epoch: 2000    
+    lr: 0.0001
+    batch_size: 8000
+
+model_checkpoint:
+    checkpoint_dir: '/path/to/models/'
+    resume_point: ''  #from where to start training
+
+##Network
+model:
+    encdec: 'DCGAN' #['dcgan','vgg','resnet']
+    prior: 'fixed' #['fixed','noprior','lp']
+    lstm: 'conv'   #['conv','fc']
+    
+    

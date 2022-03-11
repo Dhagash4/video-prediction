@@ -34,7 +34,7 @@ else:
     shutil.rmtree(MODEL_SAVE)
 mmnist_data_dir = os.path.join(data_dir,data)
 
-# train_loader, val_loader,test_loader = MMNIST(mmnist_data_dir, seq_first = True, device=device)
+test_loader = MMNIST(mmnist_data_dir, seq_first = True, device=device)
 train_data= MovingMNIST(train=True,data_root=mmnist_data_dir,seq_len=20)
 test_data = MovingMNIST(train=False,data_root=mmnist_data_dir,seq_len=20)
 train_loader = DataLoader(train_data,
@@ -43,7 +43,7 @@ train_loader = DataLoader(train_data,
                           shuffle=True,
                           drop_last=True,
                           pin_memory=True)
-test_loader = DataLoader(test_data,
+val_loader = DataLoader(test_data,
                          num_workers=0,
                          batch_size=50,
                          shuffle=True,
