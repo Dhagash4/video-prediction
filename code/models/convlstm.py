@@ -1,3 +1,4 @@
+from tkinter import image_names
 import torch
 import torch.nn as nn
 import torchvision
@@ -57,7 +58,7 @@ class ConvLSTMCell(nn.Module):
         return h_next, c_next
 
     def init_state(self, batch_size, image_size):
-        height, width = image_size
+        height, width = image_size[1], image_size[2]
         """ Initializing hidden and cell state """
         if(self.mode == "zeros"):
             h = torch.zeros(batch_size, self.hidden_dim, height, width, device=self.conv.weight.device)
@@ -74,29 +75,13 @@ class ConvLSTMCell(nn.Module):
         
 
 class predictor_lstm(nn.Module):
-    """ 
-    Sequential classifier for images. Embedded image rows are fed to a RNN
     
-    Args:
-    -----
-    input_dim: integer
-        dimensionality of the rows to embed
-    out_dim: integer 
-        dimensionality of the output LSTM
-    hidden_dim: integer
-        dimensionality of the states in the cell
-    num_layers: integer
-        number of stacked LSTMS
-    mode: string
-        intialization of the states
-    """
-    
-    def __init__(self, input_dim = 129, hidden_dim = [512,256], kernels = [(5,5),(3,3)], return_all_layers = False,
+    def __init__(self, input_dim = (64,32,32), hidden_dim = [64,64], kernels = [(5,5),(3,3)], return_all_layers = False,
                 num_layers=2, mode="zeros",  batch_size =40, bias=True, device = "cpu"):
         """ Module initializer """
         assert mode in ["zeros", "random", "learned"]
         super().__init__()
-        self.input_dim = input_dim
+        self.input_dim = input_dim[0]
         self.num_layers = num_layers
         self.hidden_dim =  hidden_dim if self.num_layers>=2 else hidden_dim[0]
         self.kernels = kernels if self.num_layers>=2 else kernels[0]
@@ -106,6 +91,7 @@ class predictor_lstm(nn.Module):
         self.return_all_layers = return_all_layers
         self.bias = bias
         conv_lstms  = []
+        self.image_size = input_dim
         # iterating over no of layers
         for i in range(0, self.num_layers):
             cur_input_dim = self.input_dim if i == 0 else self.hidden_dim[i-1]
@@ -113,15 +99,12 @@ class predictor_lstm(nn.Module):
             conv_lstms.append(ConvLSTMCell(input_dim=cur_input_dim,
                                           hidden_dim=self.hidden_dim[i],
                                           kernel_size=self.kernels[i],
-                                          bias=self.bias))
+                                          bias=self.bias,
+                                          image_size = self.image_size,
+                                          device = device))
 
         self.conv_lstms = nn.ModuleList(conv_lstms)
 
-        self.conv1 = nn.Conv2d(self.hidden_dim[-1], 128, 3, 1, 1)
-        
-        # self.h, self.c = self.init_state()
-
-        self.image_size = (8,8)
         self.hidden_state = self._init_hidden()
 
         return
@@ -129,17 +112,7 @@ class predictor_lstm(nn.Module):
     
     def forward(self, x, hidden_state=None):
        
-
-        # x=x.unsqueeze(dim=1)
-        # b, _, _, h, w = x.size()
-
-        # if hidden_state is not None:
-        #     raise NotImplementedError()
-        # else:
-        #     hidden_state = self._init_hidden(batch_size=b,
-        #                                      image_size=(h, w))
-
-        
+        x=x.unsqueeze(dim=1)
         cur_layer_input = x
         output_list = []
         x_len = x.size(1)
@@ -165,9 +138,7 @@ class predictor_lstm(nn.Module):
 
         # batch_shape = output_list[-1].shape[0]
 
-        final_out = self.conv1(output_list[-1])
-        # classifying
-        # final_out= self.classifier(output_list[-1].view(batch_shape, - 1)) # feeding only output at last layer
+        final_out = output_list[-1]
 
         return final_out
     
@@ -179,108 +150,3 @@ class predictor_lstm(nn.Module):
         return init_states
 
 
-class latent_lstm(nn.Module):
-    """ 
-    Sequential classifier for images. Embedded image rows are fed to a RNN
-    
-    Args:
-    -----
-    input_dim: integer
-        dimensionality of the rows to embed
-    out_dim: integer 
-        dimensionality of the output LSTM
-    hidden_dim: integer
-        dimensionality of the states in the cell
-    num_layers: integer
-        number of stacked LSTMS
-    mode: string
-        intialization of the states
-    """
-    
-    def __init__(self, input_dim = 128, out_dim =64, hidden_dim = 512, kernels = [(5,5)], return_all_layers = False,
-                num_layers=1, mode="zeros", batch_size = 40, bias=True, device = "cuda"):
-        """ Module initializer """
-        assert mode in ["zeros", "random", "learned"]
-        super().__init__()
-        self.input_dim = input_dim
-        self.out_dim = out_dim
-        self.hidden_dim =  hidden_dim if self.num_layers>=2 else hidden_dim[0]
-        self.num_layers = num_layers
-        self.kernels = kernels if self.num_layers>=2 else kernels[0]
-        self.mode = mode
-        self.batch_size = batch_size
-        self.device = device
-        self.return_all_layers = return_all_layers
-        self.image_size = (8,8)
-        self.bias = True
-
-        conv_lstms  = []
-        # iterating over no of layers
-        for i in range(0, self.num_layers):
-            cur_input_dim = self.input_dim if i == 0 else self.hidden_dim
-
-            conv_lstms.append(ConvLSTMCell(input_dim=cur_input_dim,
-                                          hidden_dim=self.hidden_dim,
-                                          kernel_size=self.kernels,
-                                          bias=self.bias))
-
-        self.conv_lstms = nn.ModuleList(conv_lstms)
-
-        self.mu = nn.Conv2d(self.hidden_dim, 1, 3, 1, 1)
-        self.log_var = nn.Conv2d(self.hidden_dim, 1, 3, 1, 1)
-
-        self.hidden_state = self._init_hidden()
-
-        return
-
-    def reparameterize(self, mu, log_var):
-        """ Reparametrization trick"""
-        std = torch.exp(0.5*log_var)
-        eps = torch.randn_like(std)  # random sampling happens here
-        z = mu + std * eps
-        return z
-    
-    def forward(self, x, hidden_state=None):
-       
-        x=x.unsqueeze(dim=1)
-        b, _, _, h, w = x.size()
-
-        cur_layer_input = x
-        output_list = []
-        x_len = x.size(1)
-
-        # iterating over no of layers
-        for i in range(self.num_layers):
-
-            h, c = self.hidden_state[i]
-            each_layer_output = []
-            # iterating over sequence length
-            for t in range(x_len):
-                h, c = self.conv_lstms[i](x=cur_layer_input[:, t, :, :, :],
-                                                 cur_state=[h, c])
-                each_layer_output.append(h)
-
-            stacked_layer_output = torch.stack(each_layer_output, dim=1)
-            cur_layer_input = stacked_layer_output
-
-            output_list.append(stacked_layer_output)
-
-        if not self.return_all_layers:
-            output_list = output_list[-1:]
-
-
-        mu = self.mu(output_list[-1])
-        mu = mu.view(-1, self.out_dim)
-        log_var = self.log_var(output_list[-1])
-        log_var = log_var.view(-1, self.out_dim)
-        # classifying
-        # final_out= self.classifier(output_list[-1].view(batch_shape, - 1)) # feeding only output at last layer
-        z = self.reparameterize(mu, log_var)
-        z = z.view(-1, 1, 8, 8)
-        return z, mu, log_var
-       
-    def _init_hidden(self):
-        init_states = []
-        for i in range(self.num_layers):
-            init_states.append(self.conv_lstms[i].init_state(self.batch_size, self.image_size))
-        return init_states
