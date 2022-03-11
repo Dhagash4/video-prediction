@@ -67,9 +67,15 @@ def save_grid_batch(real_batch, pred_batch=None, nsamples = 5, text = None, batc
             for j in range(seq_len):
                 ax[2*i,j].imshow(real_video[j][0], cmap="gray")
                 ax[2*i,j].axis("off")
-
-                ax[2*i+1,j].imshow(video[j][0], cmap="gray")
-                ax[2*i+1,j].axis("off")
+                
+                if j>=10: 
+                    ax[2*i+1,j].imshow(video[j][0], cmap="gray")
+                    ax[2*i+1,j].axis("off")
+                else:
+                    h, w =video[j][0].shape
+                    whiteFrame = 255 * np.ones((h,w), np.uint8)
+                    ax[2*i+1,j].imshow(whiteFrame, cmap="gray")
+                    ax[2*i+1,j].axis("off")
         plt.tight_layout()
         # plt.show() 
     else:

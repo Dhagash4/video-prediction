@@ -144,14 +144,14 @@ def get_KTH(data_dir, batch_size = 40, seq_first=True, frame_skip=20, device = "
         
     # Training Data Loader
     train_loader = DataLoader(train_data, shuffle=True, 
-                            batch_size=batch_size, collate_fn=collate)
+                            batch_size=batch_size, collate_fn=collate, drop_last=True)
 
     # Validation Data Loader
     val_loader = DataLoader(val_data, shuffle=True, 
-                            batch_size=batch_size, collate_fn=collate)                        
+                            batch_size=batch_size, collate_fn=collate, drop_last=True)                        
 
     # Test Data Loader
     test_loader = DataLoader(test_data, shuffle=True, 
-                            batch_size=batch_size, collate_fn=collate)
+                            batch_size=batch_size, collate_fn=collate, drop_last=True)
     
     return train_loader, val_loader, test_loader
