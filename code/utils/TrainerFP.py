@@ -12,7 +12,7 @@ class TrainerFP:
     """
     Class for initializing network and training it
     """
-    def __init__(self, train_type = "FIxed Prior", batch_size =40, embed_dim=128, hidden_dim=256,
+    def __init__(self, train_type = "Fixed Prior", batch_size =40, embed_dim=128, hidden_dim=256,
                 latent_dim=10, img_size=64, device="cpu", writer=None,save_path = None):
         """ Initialzer """
         assert writer is not None, f"Tensorboard writer not set..."
