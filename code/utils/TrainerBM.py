@@ -1,5 +1,5 @@
-from models.dcgan import *
-from models.lstm import *
+from models.vgg_baseline import *
+from models.convlstm_baseline import *
 import torch
 import torch.nn as nn
 from tqdm import tqdm
@@ -12,19 +12,17 @@ class TrainerFP:
     """
     Class for initializing network and training it
     """
-    def __init__(self, train_type = "Fixed Prior", batch_size =40, embed_dim=128, hidden_dim=256,
-                latent_dim=10, img_size=64, device="cpu", writer=None,save_path = None):
+    def __init__(self, batch_size =40, in_size = (1,64,64), device="cpu", writer=None,save_path = None):
         """ Initialzer """
         assert writer is not None, f"Tensorboard writer not set..."
         assert save_path is not None, f"Checkpoint saving directory not set..."
         
         self.past_frames = 10
         self.future_frames = 10 
-        self.z_dim = latent_dim
-        self.g_dim = embed_dim
+       
         self.lr = 0.002
         self.beta = 0.0001
-        self.hidden_dim = hidden_dim
+        
         self.batch_size = batch_size
         self.last_frame_skip = True
         self.device = device
@@ -32,19 +30,18 @@ class TrainerFP:
         self.writer = SummaryWriter(writer)
 
         # if train_type == "Fixed Prior" and img_size==64:
-        self.encoder = DCGANEncoder()
-        self.decoder = DCGANDecoder()
+        self.encoder = VGG_Encoder()
+        self.decoder = VGG_Decoder()
+        self.lstm  = LSTM_baseline()
         self.encoder = self.encoder.to(device)
         self.decoder = self.decoder.to(device)
+        self.lstm = self.lstm.to(device)
 
-        self.predictor = predictor_lstm(self.g_dim + self.z_dim, self.g_dim, self.hidden_dim, num_layers=2, batch_size=self.batch_size)
-        self.posterior = latent_lstm(self.g_dim, self.z_dim, hidden_dim, num_layers=1, batch_size=self.batch_size)
-        self.predictor = self.predictor.to(device)
-        self.posterior = self.posterior.to(device)
+
         # Decay LR by a factor of 0.1 every 5 epochs
         # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.2)
-        self.predictor_optimizer = torch.optim.Adam(self.predictor.parameters(), lr=self.lr, betas = (0.9, 0.999))
-        self.posterior_optimizer = torch.optim.Adam(self.posterior.parameters(), lr=self.lr, betas = (0.9, 0.999))
+        
+        self.lstm_optimizer = torch.optim.Adam(self.lstm.parameters(), lr=self.lr, betas = (0.9, 0.999))
         self.encoder_optimizer = torch.optim.Adam(self.encoder.parameters(), lr=self.lr, betas = (0.9, 0.999))
         self.decoder_optimizer = torch.optim.Adam(self.decoder.parameters(), lr=self.lr, betas = (0.9, 0.999))
 
@@ -65,8 +62,8 @@ class TrainerFP:
     def train_one_step(self, x):
         """ Training both models for one optimization step """
         
-        self.predictor_optimizer.zero_grad()
-        self.posterior_optimizer.zero_grad()
+        
+        self.lstm.zero_grad()
         self.encoder_optimizer.zero_grad()
         self.decoder_optimizer.zero_grad()
 
