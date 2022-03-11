@@ -5,7 +5,7 @@ import torchvision
 
 class ConvLSTMCell(nn.Module):
 
-    def __init__(self, input_dim, hidden_dim, kernel_size, bias, image_size = (128,8,8), mode="zeros", device = "cpu"):
+    def __init__(self, input_dim, hidden_dim, kernel_size, bias, image_size = (128,8,8), mode="zeros", device="cpu"):
         super(ConvLSTMCell, self).__init__()
 
         self.input_dim = input_dim
@@ -101,7 +101,7 @@ class predictor_lstm(nn.Module):
                                           kernel_size=self.kernels[i],
                                           bias=self.bias,
                                           image_size = self.image_size,
-                                          device = device))
+                                          device = self.device))
 
         self.conv_lstms = nn.ModuleList(conv_lstms)
 
@@ -110,7 +110,7 @@ class predictor_lstm(nn.Module):
         return
     
     
-    def forward(self, x, hidden_state=None):
+    def forward(self, x):
        
         x=x.unsqueeze(dim=1)
         cur_layer_input = x

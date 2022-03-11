@@ -39,15 +39,15 @@ class ConvTransposeBlock(nn.Module):
 
 class VGGEncoder(nn.Module):
  
-    def __init__(self, in_size = (1, 64, 64), kernels = [1, 64, 128, 256, 512], latent_dim=128, device = "cpu"):
+    def __init__(self):
 
         super(VGGEncoder, self).__init__()
 
-        self.in_size = in_size
-        self.input_channels = in_size[0]
-        self.kernels = kernels
-        self.latent_dim = latent_dim
-        self.device = device
+        # self.in_size = in_size
+        # self.input_channels = in_size[0]
+        # self.kernels = kernels
+        # self.latent_dim = latent_dim
+        # self.device = device
 
         """ Defining convolutional encoder """
         self.vgg_block1 = nn.Sequential(
@@ -55,9 +55,6 @@ class VGGEncoder(nn.Module):
                     ConvBlock(64, 64),
                     nn.MaxPool2d(kernel_size = 2, stride=2, padding = 0)    
                     )
-
-        self.convlstm1 = predictor_lstm( input_dim = (64,32,32), hidden_dim = [64,64], kernels = [(5,5),(3,3)], return_all_layers = False,
-                num_layers=2, mode="zeros",  batch_size =40, bias=True, device = self.device)
         
         self.vgg_block2 = nn.Sequential(
                     ConvBlock(64, 128),
@@ -65,8 +62,6 @@ class VGGEncoder(nn.Module):
                     nn.MaxPool2d(kernel_size = 2, stride=2, padding = 0)    
                     )
 
-        self.convlstm2 = predictor_lstm( input_dim = (128,16,16), hidden_dim = [128,128], kernels = [(5,5),(3,3)], return_all_layers = False,
-                num_layers=2, mode="zeros",  batch_size =40, bias=True, device = self.device)
         
         self.vgg_block3 = nn.Sequential(
                     ConvBlock(128, 256),
@@ -74,46 +69,32 @@ class VGGEncoder(nn.Module):
                     ConvBlock(256, 256),
                     nn.MaxPool2d(kernel_size = 2, stride=2, padding = 0)    
                     )
-
-        self.convlstm3 = predictor_lstm( input_dim = (256,8,8), hidden_dim = [256,256], kernels = [(5,5),(3,3)], return_all_layers = False,
-                num_layers=2, mode="zeros",  batch_size =40, bias=True, device = self.device)
-
          
     def forward(self,x):
         
-        encoded_skip = []
-        lstm_outputs =[]
+        encoded_skips = []
 
         v1 = self.vgg_block1(x)
-        lstm1 = self.convlstm1(v1)
-
-        lstm_outputs.append(lstm1)
-        encoded_skip.append(v1)
+        encoded_skips.append(v1)
 
         v2 = self.vgg_block2(v1)
-        lstm2 = self.convlstm2(v2)
-
-        lstm_outputs.append(lstm2)
-        encoded_skip.append(v2)
+        encoded_skips.append(v2)
 
         v3 = self.vgg_block3(v2)
-        lstm3 = self.convlstm1(v3)
-
-        lstm_outputs.append(lstm3)
-        encoded_skip.append(v3)
+        encoded_skips.append(v3)
         
-        return encoded_skip, lstm_outputs
+        return encoded_skips
 
 class VGGDecoder(nn.Module):
  
-    def __init__(self, out_size = (1, 64, 64), kernels = [1, 64, 128, 256, 512], latent_dim=128):
+    def __init__(self):
 
         super(VGGDecoder, self).__init__()
 
-        self.out_size = out_size
-        self.input_channels = out_size[0]
-        self.kernels = kernels
-        self.latent_dim = latent_dim
+        # self.out_size = out_size
+        # self.input_channels = out_size[0]
+        # self.kernels = kernels
+        # self.latent_dim = latent_dim
 
         self.vgg_block_dec3 = nn.Sequential(
                     ConvBlock(256, 256),
@@ -134,7 +115,7 @@ class VGGDecoder(nn.Module):
              
     def forward(self, x):
         
-        encoded_skip, lstm_outputs = x
+        encoded_skips, lstm_outputs = x
         # input = self.in1(input)
 
         # if self.vgg_block_dec4 is not None:
