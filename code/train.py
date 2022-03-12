@@ -71,7 +71,7 @@ def main(config):
         os.makedirs(logging_path, exist_ok=True)
     
     shutil.rmtree(logging_path)
-    shutil.rmtree(saving_path)
+    # shutil.rmtree(saving_path)
     """optimizers"""
 
     if optimizer == 'adam':
