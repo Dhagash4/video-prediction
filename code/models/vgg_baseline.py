@@ -51,7 +51,7 @@ class VGGEncoder(nn.Module):
 
         """ Defining convolutional encoder """
         self.vgg_block1 = nn.Sequential(
-                    ConvBlock(self.input_channels, 64),
+                    ConvBlock(1, 64),
                     ConvBlock(64, 64),
                     nn.MaxPool2d(kernel_size = 2, stride=2, padding = 0)    
                     )
@@ -109,7 +109,7 @@ class VGGDecoder(nn.Module):
         
         self.vgg_block_dec1 = nn.Sequential(
                     ConvBlock(64*2, 64),
-                    nn.ConvTranspose2d(64, self.input_channels, 4, 2, 1),
+                    nn.ConvTranspose2d(64, 1, 4, 2, 1),
                     nn.Sigmoid()
                     )
              
