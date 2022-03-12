@@ -114,7 +114,7 @@ class KTH(Dataset):
     def __len__(self):
         return len(self.sequences)
 
-def get_KTH(data_dir, batch_size = 40, seq_first=True, frame_skip=20, device = "cpu"):
+def get_KTH(data_dir, batch_size = 40, seq_first=True, frame_skip=20, device = "cpu",num_workers=4):
     
     
     batch_size=batch_size
@@ -144,14 +144,14 @@ def get_KTH(data_dir, batch_size = 40, seq_first=True, frame_skip=20, device = "
         
     # Training Data Loader
     train_loader = DataLoader(train_data, shuffle=True, 
-                            batch_size=batch_size, collate_fn=collate, drop_last=True)
+                            batch_size=batch_size, collate_fn=collate, drop_last=True,num_workers = num_workers)
 
     # Validation Data Loader
     val_loader = DataLoader(val_data, shuffle=True, 
-                            batch_size=batch_size, collate_fn=collate, drop_last=True)                        
+                            batch_size=batch_size, collate_fn=collate, drop_last=True,num_workers = num_workers)                        
 
     # Test Data Loader
     test_loader = DataLoader(test_data, shuffle=True, 
-                            batch_size=batch_size, collate_fn=collate, drop_last=True)
+                            batch_size=batch_size, collate_fn=collate, drop_last=True,num_workers = num_workers)
     
     return train_loader, val_loader, test_loader

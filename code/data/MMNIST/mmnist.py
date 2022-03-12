@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-def MMNIST(data_dir, batch_size = 40, seq_first=True, device = "cpu",overfit= True):
+def MMNIST(data_dir, batch_size = 40, seq_first=True, device = "cpu",num_workers=4):
     
     #dowload data if not downloaded
     file_path = os.path.join(data_dir, 'mnist_test_seq.npy')
@@ -22,9 +22,9 @@ def MMNIST(data_dir, batch_size = 40, seq_first=True, device = "cpu",overfit= Tr
  
 
     # train_data = MovingMNIST[:8000]         
-    # val_data = MovingMNIST[8000:9000]       
+    val_data = MovingMNIST[:1000]       
     # test_data = MovingMNIST[8000:10000]
-    test_data = MovingMNIST[:]   
+    test_data = MovingMNIST[1000:]   
     
 
     def collate(batch):
@@ -43,11 +43,11 @@ def MMNIST(data_dir, batch_size = 40, seq_first=True, device = "cpu",overfit= Tr
     #                         batch_size=batch_size, collate_fn=collate)
 
     # # Validation Data Loader
-    # val_loader = DataLoader(val_data, shuffle=True, 
-    #                         batch_size=batch_size, collate_fn=collate)                        
+    val_loader = DataLoader(val_data, shuffle=True, 
+                            batch_size=batch_size, collate_fn=collate,num_workers=num_workers)                        
 
     # Test Data Loader
     test_loader = DataLoader(test_data, shuffle=True, 
-                            batch_size=batch_size, collate_fn=collate)
+                            batch_size=batch_size, collate_fn=collate,num_workers=num_workers)
     
-    return test_loader#train_loader, val_loader
+    return test_loader, val_loader#train_loader, val_loader

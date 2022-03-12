@@ -43,11 +43,6 @@ class VGGEncoder(nn.Module):
 
         super(VGGEncoder, self).__init__()
 
-        # self.in_size = in_size
-        # self.input_channels = in_size[0]
-        # self.kernels = kernels
-        # self.latent_dim = latent_dim
-        # self.device = device
 
         """ Defining convolutional encoder """
         self.vgg_block1 = nn.Sequential(
@@ -71,16 +66,16 @@ class VGGEncoder(nn.Module):
          
     def forward(self,x):
         
-        # encoded_skips = []
+        
 
         v1 = self.vgg_block1(x)
-        # encoded_skips.append(v1)
+        
 
         v2 = self.vgg_block2(v1)
-        # encoded_skips.append(v2)
+        
 
         v3 = self.vgg_block3(v2)
-        # encoded_skips.append(v3)
+        
         
         return [v1,v2,v3]
 
@@ -90,11 +85,8 @@ class VGGDecoder(nn.Module):
 
         super(VGGDecoder, self).__init__()
 
-        # self.out_size = out_size
-        # self.input_channels = out_size[0]
-        # self.kernels = kernels
-        # self.latent_dim = latent_dim
-
+        
+        
         self.vgg_block_dec3 = nn.Sequential(
                     ConvBlock(256, 256),
                     ConvBlock(256, 256),
@@ -115,10 +107,6 @@ class VGGDecoder(nn.Module):
     def forward(self, x):
         
         lstm_outputs = x
-        # input = self.in1(input)
-
-        # if self.vgg_block_dec4 is not None:
-        #     input = self.vgg_block_dec4(torch.cat([input, encoded_skip[3]], 1))
         
         v3 = self.vgg_block_dec3(lstm_outputs[2])
 

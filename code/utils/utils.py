@@ -23,25 +23,49 @@ def normalize_data(dtype, sequence):
 def load_dataset(cfg):
         
         ROOT_DIR = 'data/'
-        
-        if cfg['dataset'] == 'MMNIST':
-                mmnist_data_dir = os.path.join(ROOT_DIR,cfg['dataset'])
+        num_workers = cfg['train']['num_workers']
+        seq_len = cfg['data']['seed_frames'] + cfg['data']['predict_frames'] 
+        batch_size = cfg['train']['batch_size']
+
+        if cfg['data']['dataset'] == 'MMNIST':
+                mmnist_data_dir = os.path.join(ROOT_DIR,cfg['data']['dataset'])
                 
                 if not os.path.exists(mmnist_data_dir):
                         
                         print(f"[ERROR] Directory dosent exists please ensure data is in data folder")
                 
-                train_loader, val_loader, test_loader = MMNIST(mmnist_data_dir, batch_size=cfg['train']['batch_size'],seq_first = True)
+                test_loader, val_loader = MMNIST(mmnist_data_dir, batch_size=batch_size,seq_first = True,num_workers=num_workers)
+                train_data= MovingMNIST(train=True,data_root=mmnist_data_dir,seq_len=seq_len)
+                train_loader = DataLoader(train_data,
+                            num_workers=num_workers,
+                            batch_size=batch_size,
+                            shuffle=True,
+                            drop_last=True,
+                            pin_memory=True)
+
         else:
-                kth_data_dir = os.path.join(ROOT_DIR,cfg['dataset'])
+                kth_data_dir = os.path.join(ROOT_DIR,cfg['data']['dataset'])
                 
                 if not os.path.exists(kth_data_dir):
                         
                         print(f"[ERROR] Directory dosent exists please ensure data is in data folder")
                 
-                train_loader, val_loader, test_loader  = get_KTH(kth_data_dir, batch_size = cfg['train']['batch_size'], seq_first=True, frame_skip=cfg['dataset']['seq'])
+                train_loader, val_loader, test_loader  = get_KTH(kth_data_dir, batch_size = batch_size,seq_len=seq_len, seq_first=True, num_workers=num_workers)
 
         return train_loader, val_loader, test_loader                 
 
 
 
+def get_training_batch(train_loader,dtype=torch.cuda.FloatTensor):
+        while True:
+            for sequence in train_loader:
+                batch = normalize_data(dtype, sequence)
+                batch = torch.stack(batch)
+                yield batch
+
+def get_testing_batch(test_loader,dtype=torch.cuda.FloatTensor):
+        while True:
+                for sequence in test_loader:
+                        batch = normalize_data(dtype, sequence)
+                        batch = torch.stack(batch)
+                        yield batch 
