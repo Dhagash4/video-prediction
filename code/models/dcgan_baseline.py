@@ -86,12 +86,12 @@ class DCGANDecoder(nn.Module):
                     )
         
         self.block2 = nn.Sequential(
-                    ConvTransposeBlock(128, 128, 3, 1, 1),
+                    ConvTransposeBlock(128*2, 128, 3, 1, 1),
                     ConvTransposeBlock(128, 64)
                     )
 
         self.block1 = nn.Sequential(
-                    ConvTransposeBlock(64, 64, 3, 1, 1),
+                    ConvTransposeBlock(64*2, 64, 3, 1, 1),
                     nn.ConvTranspose2d(64, 1, 4, 2, 1),
                     nn.Sigmoid()
                     )

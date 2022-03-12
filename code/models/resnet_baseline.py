@@ -107,16 +107,22 @@ class ResidualBlockDecoder(nn.Module):
         if(stride==1):
             self.conv1 = nn.Conv2d(in_channels=input_channels, out_channels=output_channels, kernel_size=3, padding=1, stride=1, bias = False)
             self.bn1 = nn.BatchNorm2d(output_channels)
+        else:
+            self.conv1 = nn.ConvTranspose2d(in_channels=input_channels, out_channels=output_channels, kernel_size=3, padding=1,  output_padding=1, stride=2, bias = False)
+            self.bn1 = nn.BatchNorm2d(output_channels)
 
         self.upsample = None
         if upsample:
-            self.conv1 = nn.ConvTranspose2d(in_channels=input_channels, out_channels=output_channels, kernel_size=3, padding=1,  output_padding=1, stride=2, bias = False)
-            self.bn1 = nn.BatchNorm2d(output_channels)
+            # self.conv1 = nn.ConvTranspose2d(in_channels=input_channels, out_channels=output_channels, kernel_size=3, padding=1,  output_padding=1, stride=2, bias = False)
+            # self.bn1 = nn.BatchNorm2d(output_channels)
             self.upsample = nn.Sequential(nn.ConvTranspose2d(in_channels=input_channels, out_channels=output_channels, kernel_size=3, padding=1,  output_padding=1, stride=2, bias = False),
                                           nn.BatchNorm2d(output_channels))
 
 
     def forward(self,x):
+
+        if self.upsample is not None:
+            x = self.upsample(x)
 
         y = self.conv2(x)
         y = self.bn2(y)
@@ -124,9 +130,6 @@ class ResidualBlockDecoder(nn.Module):
 
         y = self.conv1(y)
         y = self.bn1(y)
-
-        if self.upsample is not None:
-            x = self.upsample(x)
 
         out = y+x
         out = self.lrelu(out)
@@ -140,12 +143,12 @@ class Resnet18Decoder(nn.Module):
         self.activation = "LeakyReLU"
 
         self.layer3 = self._make_layer(256, 128,  upsample=True)
-        self.layer2 = self._make_layer(128, 64, upsample=True)
-        self.layer1 = self._make_layer(64, 64, upsample=False)
+        self.layer2 = self._make_layer(128*2, 64, upsample=True)
+        self.layer1 = self._make_layer(64*2, 64, upsample=False)
         
         self.upsamp = nn.UpsamplingNearest2d(scale_factor=2)
         self.upc6 = nn.Sequential(
-            nn.ConvTranspose2d(64, 1, kernel_size=3, padding=1, stride=1),
+            nn.ConvTranspose2d(64*2, 1, 3, 1, 1),
             nn.Sigmoid()
             )
 
@@ -168,9 +171,9 @@ class Resnet18Decoder(nn.Module):
 
         l3 = self.layer3(lstm_outputs[2])
 
-        l2 = self.vgg_block_dec2(torch.cat([l3, lstm_outputs[1]], 1))
+        l2 = self.layer2(torch.cat([l3, lstm_outputs[1]], 1))
 
-        l1 = self.vgg_block_dec1(torch.cat([l2, lstm_outputs[0]], 1))
+        l1 = self.layer1(torch.cat([l2, lstm_outputs[0]], 1))
         
         out = self.upc6(self.upsamp(l1))
 
