@@ -189,8 +189,7 @@ class TrainerBase:
                 val_loss+=loss
                 val_progress.set_description(f"Val Epoch {i+1} Iter {val_iter+1}: val_loss {val_loss:.5f} ")
                 val_iter+=1
-                self.writer.add_scalar(f'Validation Loss',val_loss, global_step=val_iter)
-
+            self.writer.add_scalar(f'Validation Loss',val_loss, global_step=i)
             print(f"Training Loss:\ntrain_loss: {epoch_mse}, val_loss: {val_loss}")
             
 
