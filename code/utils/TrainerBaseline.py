@@ -76,6 +76,7 @@ class TrainerBase:
     @torch.no_grad()
     def generate_future_sequences(self, test_batch):
         """ Generating a bunch of images using current state of generator """
+
         self.predictor.eval()
         self.encoder.eval()
         self.decoder.eval()
@@ -104,9 +105,6 @@ class TrainerBase:
                 pred_seq.append(x_in)
                 gt_seq.append(test_batch[i])
                 all_gen.append(x_in) 
-        
-        # gt_seq.extend(pred_seq)
-        # predicted_batch = torch.stack(gt_seq)
 
         all_gen = torch.stack(all_gen)
         gt_seq = torch.stack(gt_seq)
@@ -125,7 +123,7 @@ class TrainerBase:
         for i in range(num_epochs):
             self.predictor.train()
             self.encoder.train()
-            self.decoder.train() 
+            self.decoder.train()
             epoch_mse =0
 
             progress_bar = tqdm(enumerate(train_loader), total=len(train_loader))

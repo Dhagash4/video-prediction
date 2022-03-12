@@ -111,37 +111,16 @@ class predictor_lstm(nn.Module):
     
     
     def forward(self, x):
-       
-        x=x.unsqueeze(dim=1)
-        cur_layer_input = x
-        output_list = []
-        x_len = x.size(1)
 
-        # iterating over no of layers
+        h_input = x
         for i in range(self.num_layers):
 
-            h, c = self.hidden_state[i]
-            each_layer_output = []
-            # iterating over sequence length
-            for t in range(x_len):
-                h, c = self.conv_lstms[i](x=cur_layer_input[:, t, :, :, :],
-                                                 cur_state=[h, c])
-                each_layer_output.append(h)
+            self.hidden_state[i] = self.conv_lstms[i](x= h_input, cur_state = self.hidden_state[i])
+            
+            h,c  = self.hidden_state[i]
+            h_input = h
 
-            stacked_layer_output = torch.stack(each_layer_output, dim=1)
-            cur_layer_input = stacked_layer_output
-
-            output_list.append(stacked_layer_output)
-
-        if not self.return_all_layers:
-            output_list = output_list[-1:]
-
-        # batch_shape = output_list[-1].shape[0]
-
-        final_out = output_list[-1]
-
-        return final_out
-    
+        return h_input
         
     def _init_hidden(self):
         init_states = []
