@@ -110,6 +110,7 @@ class predictor_lstm(nn.Module):
     
     
     def forward(self, x):
+<<<<<<< HEAD
        
         # x=x.unsqueeze(dim=1)
         # cur_layer_input = x
@@ -119,12 +120,17 @@ class predictor_lstm(nn.Module):
         # iterating over no of layers
         h_input = x
         
+=======
+
+        h_input = x
+>>>>>>> a0597d0aa7dfb1c98dc1db3e1a27bcf9787ec86c
         for i in range(self.num_layers):
 
             self.hidden_state[i] = self.conv_lstms[i](x= h_input, cur_state = self.hidden_state[i])
             
             h,c  = self.hidden_state[i]
             h_input = h
+<<<<<<< HEAD
 
         return h_input
         # for i in range(self.num_layers):
@@ -151,6 +157,10 @@ class predictor_lstm(nn.Module):
 
         # return final_out
     
+=======
+
+        return h_input
+>>>>>>> a0597d0aa7dfb1c98dc1db3e1a27bcf9787ec86c
         
     def _init_hidden(self):
         init_states = []
