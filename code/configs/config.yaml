@@ -9,7 +9,7 @@ data:
     seq: 20
     seed_frames: 10
     predict_frames: 10
-    niters: 500
+    niters: 400
 
 logger:
     tblogs: "tboard_logs/"   #Default path tboard_logs/DIR_NAME
@@ -19,9 +19,9 @@ logger:
 train:
     n_gpus: 1
     num_workers: 8
-    max_epoch: 5
+    max_epoch: 300
     lr: 0.0001
-    batch_size: 5
+    batch_size: 20
     resume_point: 0  #from where to start training
     optimizer: "adam" #["adam", "rmsprop", "sgd"]
     beta1: 0.9
