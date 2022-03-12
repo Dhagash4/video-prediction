@@ -56,23 +56,28 @@ class TrainerBase:
 
         self.predictor.init_hidden_states()
 
-        h_prev = self.encoder(x[0])
         mse = 0
         
+        h_prev = x[0]
         for i in range(1,self.past_frames+self.future_frames):
             
-            lstm_ouputs = self.predictor(h_prev)
-            x_pred = self.decoder(lstm_ouputs)
-            h_prev = self.encoder(x[i])
-            mse+=self.loss(x_pred,x[i])
+            encoded_skips = self.encoder(h_prev)
+                
+            if i < self.past_frames:
+                
+                self.predictor(encoded_skips)
+                
+                h_prev = x[i]
+            
+            else:
+                
+                lstm_outputs = self.predictor(encoded_skips)
+             
+                h_prev = self.decoder(lstm_outputs)
 
-        mse.backward()
+                mse+=self.loss(h_prev,x[i])
 
-        self.predictor_optimizer.step()
-        self.encoder_optimizer.step()
-        self.decoder_optimizer.step()
-
-        return mse.data.cpu().numpy()/(self.past_frames+self.future_frames)
+        return mse.data.cpu().numpy()/(self.future_frames)
     
     @torch.no_grad()
     def generate_future_sequences(self, test_batch):

@@ -1,6 +1,6 @@
 experiment:
     id: mmnist
-    embedding: vgg
+    embedding: resnet
     predictor: convlstm
 
 ##Data
@@ -30,3 +30,7 @@ architecture:
     lstm:
         mode: 'zeros' #["zeros", "random", "learned"]
         num_layers: 2
+        
+
+   
+        
