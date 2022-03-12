@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 from tqdm import tqdm
 from utils.visualizations import *
+import utils.utils as utils
 from torch.utils.tensorboard import SummaryWriter
 
 class TrainerBase:
@@ -32,6 +33,7 @@ class TrainerBase:
         self.encoder = VGGEncoder()
         self.decoder = VGGDecoder()
         self.predictor = predictor(device = device)
+        self.save_path = save_path
         
         self.encoder = self.encoder.to(device)
         self.decoder = self.decoder.to(device)
@@ -114,11 +116,26 @@ class TrainerBase:
         pred_seq = torch.stack(pred_seq)
 
         return all_gen, gt_seq, pred_seq
+    
+    def get_training_batch(self,train_loader,dtype=torch.cuda.FloatTensor):
+        while True:
+            for sequence in train_loader:
+                batch = utils.normalize_data(dtype, sequence)
+                batch = torch.stack(batch)
+                yield batch
+
+    def get_testing_batch(self,test_loader,dtype=torch.cuda.FloatTensor):
+        while True:
+            for sequence in test_loader:
+                batch = utils.normalize_data(dtype, sequence)
+                batch = torch.stack(batch)
+                yield batch 
 
     def train(self, train_loader, val_loader, test_loader, num_epochs=300, device= "cpu", init_step=0):
         """ Training the models for several iterations """
         
         niter = 0
+        training_batch_generator = self.get_training_batch(train_loader)
         test_batch = next(iter(val_loader))
         test_batch = test_batch.to(device)
         # save_gif_batch(test_batch, nsamples=1, text = "real", show=False)
@@ -129,8 +146,9 @@ class TrainerBase:
             self.decoder.train() 
             epoch_mse =0
 
-            progress_bar = tqdm(enumerate(train_loader), total=len(train_loader))
-            for _, seqs in progress_bar:
+            progress_bar = tqdm(range(400), total=400)
+            for j in progress_bar:
+                seqs = next(training_batch_generator)
                 seqs = seqs.to(device)
                 mse = self.train_one_step(seqs)
                 epoch_mse+=mse
