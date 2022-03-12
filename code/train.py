@@ -1,4 +1,5 @@
 import os,datetime
+import shutil
 from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
@@ -63,11 +64,14 @@ def main(config):
         decoder = VGGDecoder()
         predictor = lstm(batch_size=batch_size,mode=mode,num_layers=num_layers,device=device)
     
-    os.makedirs(logging_path, exist_ok=True)
     if not os.path.exists(saving_path):
         os.makedirs(saving_path,exist_ok=True)
+    if not os.path.exists(logging_path):
 
-
+        os.makedirs(logging_path, exist_ok=True)
+    
+    shutil.rmtree(logging_path)
+    shutil.rmtree(saving_path)
     """optimizers"""
 
     if optimizer == 'adam':
