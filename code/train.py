@@ -15,13 +15,14 @@ from torchvision import datasets, models, transforms
 from utils.visualizations import *
 from utils.TrainerBaseline import *
 from models.baselineLSTM import predictor as lstm
+from models.resnet_baseline import Resnet18Encoder, Resnet18Decoder
+from models.dcgan_baseline import DCGANEncoder, DCGANDecoder
 from models.vgg_baseline import *
 from utils.utils import load_dataset
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 @click.command()
-### Add your options here
 @click.option('--config',
               '-c',
               type=str,
@@ -40,7 +41,7 @@ def main(config):
     model_resume = cfg['train']['resume_point']
     optimizer = cfg['train']['optimizer']
     beta1 = cfg['train']['beta1']
-
+    embedding = cfg['experiment']['embedding']
 
     """Model configurations"""
 
@@ -59,9 +60,24 @@ def main(config):
         print(f"continuing from {model_resume}")
         
     else:
+        if embedding == "vgg":
 
-        encoder = VGGEncoder()
-        decoder = VGGDecoder()
+            encoder = VGGEncoder()
+            decoder = VGGDecoder()
+        
+        elif embedding == "resnet":
+            encoder = Resnet18Encoder()
+            decoder = Resnet18Decoder()
+        
+        elif embedding == "dcgan":
+
+            encoder = DCGANEncoder()
+            decoder = DCGANDecoder()
+
+        else:
+
+            print(f"[ERROR] Not valid embedding layer")
+
         predictor = lstm(batch_size=batch_size,mode=mode,num_layers=num_layers,device=device)
     
     if not os.path.exists(saving_path):
@@ -71,7 +87,7 @@ def main(config):
         os.makedirs(logging_path, exist_ok=True)
     
     shutil.rmtree(logging_path)
-    # shutil.rmtree(saving_path)
+
     """optimizers"""
 
     if optimizer == 'adam':
