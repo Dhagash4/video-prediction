@@ -20,7 +20,7 @@ from models.dcgan_baseline import DCGANEncoder, DCGANDecoder
 from models.vgg_baseline import *
 from utils.utils import load_dataset
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
 @click.command()
 @click.option('--config',
@@ -50,13 +50,13 @@ def main(config):
 
     """Loding models"""
 
-    if (model_resume != 0) and os.path.exists(os.path.join(saving_path,f"model_{model_resume}")):
-        saved_model = torch.load(os.path.join(saving_path,f"model_{model_resume}"))
+    if (model_resume != 0) and os.path.exists(os.path.join(saving_path,f"model_{model_resume}.pth")):
+        saved_model = torch.load(os.path.join(saving_path,f"model_{model_resume}.pth"))
         encoder = saved_model['encoder']
         decoder = saved_model['decoder']
         predictor = saved_model['predictor']
         cfg = saved_model['config']
-        optimizer = cfg['optimizer']
+        optimizer = cfg['train']['optimizer']
         print(f"continuing from {model_resume}")
         
     else:
@@ -111,7 +111,7 @@ def main(config):
                           predictor=predictor,
                           optimizer=optimizer,
                           save_path=saving_path,
-                          writer=logging_path)
+                          writer=logging_path,resume_point=model_resume)
 
     trainer.train(train_loader, val_loader, test_loader)
 

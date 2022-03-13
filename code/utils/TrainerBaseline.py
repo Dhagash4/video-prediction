@@ -13,7 +13,7 @@ class TrainerBase:
     """
     Class for initializing network and training it
     """
-    def __init__(self,  config, device, encoder, decoder, predictor,optimizer,save_path,writer):
+    def __init__(self,  config, device, encoder, decoder, predictor,optimizer,save_path,writer, resume_point):
         
         """ Initialzer """
         
@@ -24,6 +24,7 @@ class TrainerBase:
         self.batch_size = self.cfg['train']['batch_size']
         self.last_frame_skip = True
         self.device = device
+        self.resume_point = resume_point
        
         self.writer = SummaryWriter(writer)
         self.save_path = save_path
@@ -196,12 +197,22 @@ class TrainerBase:
             all_gen = self.generate_future_sequences(test_batch)
             grid = show_grid(test_batch,all_gen,nsamples=5,pred_frames=self.past_frames)
             self.writer.add_image('images', grid, global_step=i)
-            torch.save({
-                    'encoder': self.encoder,
-                    'decoder':self.decoder,
-                    'predictor': self.predictor,
-                    'config': self.cfg},
-                    f'{self.save_path}/model_{i}.pth')
+
+            if self.resume_point != 0:
+
+                torch.save({
+                        'encoder': self.encoder,
+                        'decoder':self.decoder,
+                        'predictor': self.predictor,
+                        'config': self.cfg},
+                        f'{self.save_path}/model_{i+self.resume_point}.pth')
+            else:
+                torch.save({
+                            'encoder': self.encoder,
+                            'decoder':self.decoder,
+                            'predictor': self.predictor,
+                            'config': self.cfg},
+                            f'{self.save_path}/model_{i}.pth')
 
             if val_loss < self.best_val_loss:
 
