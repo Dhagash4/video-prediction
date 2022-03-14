@@ -138,3 +138,4 @@ tboard_logs/
 temp/
 checkpoints/
 data/MMNIST/MNIST/
+data/KTH/kth/
