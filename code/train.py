@@ -20,7 +20,7 @@ from models.dcgan_baseline import DCGANEncoder, DCGANDecoder
 from models.vgg_baseline import *
 from utils.utils import load_dataset
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
 @click.command()
 @click.option('--config',
