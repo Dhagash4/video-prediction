@@ -36,11 +36,11 @@ def make_raw_dataset(dataset="train"):
 
     for category in CATEGORIES:
         # Get all files in current category's folder.
-        folder_path = os.path.join("kth", category)
+        folder_path = os.path.join("data/KTH/kth", category)
         filenames = sorted(os.listdir(folder_path))
 
         for filename in filenames:
-            filepath = os.path.join("kth", category, filename)
+            filepath = os.path.join("data/KTH/kth", category, filename)
 
             # Get id of person in this video.
             person_id = int(filename.split("_")[0][6:])
@@ -68,7 +68,7 @@ def make_raw_dataset(dataset="train"):
                 frame = np.array(frame.getdata(),
                                  dtype=np.uint8).reshape((120, 160))
 #                 frame = imresize(frame, (128, 128))
-                frame = np.array(Image.fromarray(frame).resize(size=(128, 128)))
+                frame = np.array(Image.fromarray(frame).resize(size=(64, 64)))
 
                 frames.append(frame)
 
@@ -78,13 +78,13 @@ def make_raw_dataset(dataset="train"):
                 "frames": frames    
             })
 
-    pickle.dump(data, open("kth/%s.p" % dataset, "wb"))
+    pickle.dump(data, open("data/KTH/kth/%s.p" % dataset, "wb"))
     
 def parse_sequence_file():
     print("Parsing sequences.txt")
 
     # Read 00sequences.txt file.
-    txt_path = os.path.join(os.getcwd(), "sequences.txt")
+    txt_path = os.path.join(os.getcwd(), "data/KTH/sequences.txt")
     with open(txt_path, 'r') as content_file:
         content = content_file.read()
 

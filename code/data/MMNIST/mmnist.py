@@ -24,7 +24,7 @@ def MMNIST(data_dir, batch_size = 40, seq_first=True, device = "cpu",num_workers
     # train_data = MovingMNIST[:8000]         
     val_data = MovingMNIST[:1000]       
     # test_data = MovingMNIST[8000:10000]
-    test_data = MovingMNIST[1000:]   
+    test_data = MovingMNIST   
     
 
     def collate(batch):

@@ -1,6 +1,7 @@
 import os
 import torch
 from torch.autograd import Variable
+from torch.utils.data import DataLoader
 from models.dcgan import *
 from models.lstm import *
 from data.MMNIST.mmnist import *
@@ -43,25 +44,33 @@ def load_dataset(cfg):
                             drop_last=True,
                             pin_memory=True)
 
-        else:
+                
+
+                return train_loader, val_loader, test_loader
+
+        elif cfg['data']['dataset'] == 'KTH':
                 kth_data_dir = os.path.join(ROOT_DIR,cfg['data']['dataset'])
                 
                 if not os.path.exists(kth_data_dir):
                         
                         print(f"[ERROR] Directory dosent exists please ensure data is in data folder")
                 
-                train_loader, val_loader, test_loader  = get_KTH(kth_data_dir, batch_size = batch_size,seq_len=seq_len, seq_first=True, num_workers=num_workers)
+                train_loader, val_loader, test_loader  = get_KTH(kth_data_dir, batch_size = batch_size, seq_first=True, num_workers=num_workers)
 
-        return train_loader, val_loader, test_loader                 
+                return train_loader, val_loader, test_loader                 
 
 
 
-def get_training_batch(train_loader,dtype=torch.cuda.FloatTensor):
+def get_data_batch(cfg, train_loader, dtype=torch.cuda.FloatTensor):
         while True:
             for sequence in train_loader:
-                batch = normalize_data(dtype, sequence)
-                batch = torch.stack(batch)
-                yield batch
+                if cfg['data']['dataset'] == "MMNIST":
+                        batch = normalize_data(dtype, sequence)
+                        batch = torch.stack(batch)
+                        yield batch
+                elif cfg['data']['dataset'] == "KTH":
+                        yield sequence
+
 
 def get_testing_batch(test_loader,dtype=torch.cuda.FloatTensor):
         while True:

@@ -1,6 +1,6 @@
 #!/bin/bash
-mkdir ./kth
-cd ./kth
+mkdir -p data/KTH/kth
+cd data/KTH/kth
 
 wget http://www.nada.kth.se/cvap/actions/walking.zip
 wget http://www.nada.kth.se/cvap/actions/jogging.zip

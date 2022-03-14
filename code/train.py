@@ -20,7 +20,7 @@ from models.dcgan_baseline import DCGANEncoder, DCGANDecoder
 from models.vgg_baseline import *
 from utils.utils import load_dataset
 
-device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 @click.command()
 @click.option('--config',
@@ -42,6 +42,7 @@ def main(config):
     optimizer = cfg['train']['optimizer']
     beta1 = cfg['train']['beta1']
     embedding = cfg['experiment']['embedding']
+    skip_connection = cfg['architecture']['skip']
 
     """Model configurations"""
 
@@ -61,13 +62,13 @@ def main(config):
         
     else:
         if embedding == "vgg":
-
+            
             encoder = VGGEncoder()
-            decoder = VGGDecoder()
+            decoder = VGGDecoder(skip_connection=skip_connection)
         
         elif embedding == "resnet":
             encoder = Resnet18Encoder()
-            decoder = Resnet18Decoder()
+            decoder = Resnet18Decoder(skip_connection=skip_connection)
         
         elif embedding == "dcgan":
 

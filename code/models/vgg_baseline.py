@@ -81,37 +81,53 @@ class VGGEncoder(nn.Module):
 
 class VGGDecoder(nn.Module):
  
-    def __init__(self):
+    def __init__(self,skip_connection=False):
 
         super(VGGDecoder, self).__init__()
-
+        if not skip_connection:
+            skip = 2
+        else:
+            skip = 3
         
         
         self.vgg_block_dec3 = nn.Sequential(
-                    ConvBlock(256, 256),
+                    ConvBlock(256 * (skip-1), 256),
                     ConvBlock(256, 256),
                     ConvTransposeBlock(256,128)
                     )
         
         self.vgg_block_dec2 = nn.Sequential(
-                    ConvBlock(128*2, 128),
+                    ConvBlock(128*skip, 128),
                     ConvTransposeBlock(128,64)
                     )
         
         self.vgg_block_dec1 = nn.Sequential(
-                    ConvBlock(64*2, 64),
+                    ConvBlock(64*skip, 64),
                     nn.ConvTranspose2d(64, 1, 4, 2, 1),
                     nn.Sigmoid()
                     )
              
-    def forward(self, x):
+    def forward(self, x, skip_connection = False):
         
-        lstm_outputs = x
+        if not skip_connection:
+            
+            _,lstm_outputs = x
+            
+            v3 = self.vgg_block_dec3(lstm_outputs[2])
+
+            v2 = self.vgg_block_dec2(torch.cat([v3, lstm_outputs[1]], 1))
+
+            v1 = self.vgg_block_dec1(torch.cat([v2, lstm_outputs[0]], 1))
         
-        v3 = self.vgg_block_dec3(lstm_outputs[2])
+        else:
 
-        v2 = self.vgg_block_dec2(torch.cat([v3, lstm_outputs[1]], 1))
+            encoded, lstm_outputs = x
+            
+            v3 = self.vgg_block_dec3(torch.cat([encoded[2],lstm_outputs[2]],1))
 
-        v1 = self.vgg_block_dec1(torch.cat([v2, lstm_outputs[0]], 1))
-       
+            v2 = self.vgg_block_dec2(torch.cat([v3, encoded[1], lstm_outputs[1]], 1))
+
+            v1 = self.vgg_block_dec1(torch.cat([v2, encoded[0], lstm_outputs[0]], 1))
+
+        
         return v1

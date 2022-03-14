@@ -1,3 +1,4 @@
+from unittest import skip
 import torch
 import torch.nn as nn
 
@@ -121,8 +122,6 @@ class ResidualBlockDecoder(nn.Module):
 
     def forward(self,x):
 
-        if self.upsample is not None:
-            x = self.upsample(x)
 
         y = self.conv2(x)
         y = self.bn2(y)
@@ -131,24 +130,31 @@ class ResidualBlockDecoder(nn.Module):
         y = self.conv1(y)
         y = self.bn1(y)
 
+        if self.upsample is not None:
+            x = self.upsample(x)
         out = y+x
         out = self.lrelu(out)
         return out
     
 class Resnet18Decoder(nn.Module):
     
-    def __init__(self):
+    def __init__(self,skip_connection=False):
  
         super().__init__()
         self.activation = "LeakyReLU"
 
-        self.layer3 = self._make_layer(256, 128,  upsample=True)
-        self.layer2 = self._make_layer(128*2, 64, upsample=True)
-        self.layer1 = self._make_layer(64*2, 64, upsample=False)
+        if not skip_connection:
+            skip = 2
+        else:
+            skip = 3
+
+        self.layer3 = self._make_layer(256 * (skip-1), 128,  upsample=True)
+        self.layer2 = self._make_layer(128*skip, 64, upsample=True)
+        self.layer1 = self._make_layer(64*skip, 64, upsample=False)
         
         self.upsamp = nn.UpsamplingNearest2d(scale_factor=2)
         self.upc6 = nn.Sequential(
-            nn.ConvTranspose2d(64*2, 1, kernel_size=3, padding=1, stride=1),
+            nn.ConvTranspose2d(64*skip, 1, kernel_size=3, padding=1, stride=1),
             nn.Sigmoid()
             )
 
@@ -165,16 +171,30 @@ class Resnet18Decoder(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def forward(self,x):
+    def forward(self,x,skip_connection=False):
+
+        if not skip_connection:
   
-        lstm_outputs = x
+            _,lstm_outputs = x
 
-        l3 = self.layer3(lstm_outputs[2])
+            l3 = self.layer3(lstm_outputs[2])
 
-        l2 = self.layer2(torch.cat([l3, lstm_outputs[1]], 1))
+            l2 = self.layer2(torch.cat([l3, lstm_outputs[1]], 1))
 
-        l1 = self.layer1(torch.cat([l2, lstm_outputs[0]], 1))
+            l1 = self.layer1(torch.cat([l2, lstm_outputs[0]], 1))
+            
+            out = self.upc6(self.upsamp(l1))
         
-        out = self.upc6(self.upsamp(l1))
+        else:
+
+            encoded,lstm_outputs = x
+
+            l3 = self.layer3(torch.cat([encoded[2], lstm_outputs[2]],1))
+
+            l2 = self.layer2(torch.cat([l3, encoded[1], lstm_outputs[1]], 1))
+
+            l1 = self.layer1(torch.cat([l2, encoded[0], lstm_outputs[0]], 1))
+            
+            out = self.upc6(self.upsamp(l1))
 
         return out

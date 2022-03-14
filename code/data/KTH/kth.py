@@ -7,11 +7,12 @@ import cv2
 import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
+import subprocess
 
 class KTH(Dataset):
     """Dataset Class for Loading Video"""
 
-    def __init__(self, data_dir, image_size=128, train = True, val = False, seq_len=20, frame_skip = 20, transform=None):
+    def __init__(self, data_dir, image_size=64, train = True, val = False, seq_len=20, frame_skip = 20, transform=None):
         """
         Args:
     
@@ -25,17 +26,23 @@ class KTH(Dataset):
         self.seed_set = False
 
         # self.data= {}
+
+        if not os.path.exists(os.path.join(data_dir,"kth")):
+            subprocess.call(['sh' , './' + os.path.join(data_dir,'download_kth.sh')])
+            subprocess.call(['python', os.path.join(data_dir,'preprocess_kth.py')])
+
+
         if train:
             self.train = True
             data_type = 'train'
-            self.videos = pickle.load(open(os.path.join(data_dir,"train.p"), "rb")) 
+            self.videos = pickle.load(open(os.path.join(data_dir,"kth/train.p"), "rb")) 
         elif val:
             self.train = False
             data_type = 'train'
-            self.videos = pickle.load(open(os.path.join(data_dir,"val.p"), "rb"))
+            self.videos = pickle.load(open(os.path.join(data_dir,"kth/val.p"), "rb"))
         else:
             self.train = False
-            self.videos = pickle.load(open(os.path.join(data_dir,"test.p"), "rb")) 
+            self.videos = pickle.load(open(os.path.join(data_dir,"kth/test.p"), "rb")) 
             data_type = 'test'
                 
         #for all sequences
@@ -114,10 +121,11 @@ class KTH(Dataset):
     def __len__(self):
         return len(self.sequences)
 
-def get_KTH(data_dir, batch_size = 40, seq_first=True, frame_skip=20, device = "cpu",num_workers=4):
+def get_KTH(data_dir, batch_size = 40, seq_first=True, frame_skip=5, device = "cpu",num_workers=4):
     
     
     batch_size=batch_size
+    
 
     # Train, Test, Validation splits
     train_data = KTH(data_dir, train = True, val = False, frame_skip=frame_skip)       
@@ -131,7 +139,7 @@ def get_KTH(data_dir, batch_size = 40, seq_first=True, frame_skip=20, device = "
         labels = []
         seqs = []
         for i in range(len(batch)):
-            batch[i]['seq'] = torch.tensor(batch[i]['seq']) / 255.0
+            batch[i]['seq'] = batch[i]['seq'] / 255.0
             batch[i]['seq'] = batch[i]['seq'].permute(0,3,1,2)
             batch[i]['seq'] = batch[i]['seq'].to(device)
             seqs.append(batch[i]['seq'])
@@ -140,7 +148,7 @@ def get_KTH(data_dir, batch_size = 40, seq_first=True, frame_skip=20, device = "
         seqs = torch.stack(seqs)
         if seq_first:
             seqs = seqs.permute(1,0,2,3,4)    
-        return (seqs, labels)   
+        return seqs  
         
     # Training Data Loader
     train_loader = DataLoader(train_data, shuffle=True, 

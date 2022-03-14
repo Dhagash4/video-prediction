@@ -1,11 +1,11 @@
 experiment:
-    id: mmnist
-    embedding: vgg
+    id: kth
+    embedding: resnet
     predictor: convlstm
 
 ##Data
 data:
-    dataset: "MMNIST"  #['MMNIST','KTH']
+    dataset: "KTH"  #['MMNIST','KTH']
     seq: 20
     seed_frames: 10
     predict_frames: 10
@@ -29,7 +29,9 @@ train:
 architecture:
     lstm:
         mode: 'zeros' #["zeros", "random", "learned"]
-        num_layers: 2
+        num_layers: 3
+        
+    skip: False
         
 
    

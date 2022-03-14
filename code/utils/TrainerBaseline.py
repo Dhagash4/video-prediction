@@ -2,6 +2,7 @@
 # from models.lstm import *
 # from models.resnet import *
 
+from unittest import skip
 import torch
 import torch.nn as nn
 from tqdm import tqdm
@@ -25,6 +26,7 @@ class TrainerBase:
         self.last_frame_skip = True
         self.device = device
         self.resume_point = resume_point
+        self.skip_connection = self.cfg['architecture']['skip']
        
         self.writer = SummaryWriter(writer)
         self.save_path = save_path
@@ -41,37 +43,38 @@ class TrainerBase:
 
 
         """Optimization Parameters"""
-
-        self.encoder_optimizer = self.optimizer(self.encoder.parameters(), lr=self.lr, betas = (0.9, 0.999))
-        self.decoder_optimizer = self.optimizer(self.decoder.parameters(), lr=self.lr, betas = (0.9, 0.999))
-        self.predictor_optimizer = self.optimizer(self.predictor.parameters(), lr=self.lr, betas = (0.9, 0.999))
+        params = list(self.encoder.parameters()) + list(self.decoder.parameters()) + list(self.predictor.parameters())
+        self.model_optimizer = self.optimizer(params,lr=self.lr, betas = (0.9, 0.999))
+        # self.encoder_optimizer = self.optimizer(self.encoder.parameters(), lr=self.lr, betas = (0.9, 0.999))
+        # self.decoder_optimizer = self.optimizer(self.decoder.parameters(), lr=self.lr, betas = (0.9, 0.999))
+        # self.predictor_optimizer = self.optimizer(self.predictor.parameters(), lr=self.lr, betas = (0.9, 0.999))
         self.loss = nn.MSELoss()
 
     def train_one_step(self, x):
         
         """ Training all models for one optimization step """
-        
-        self.encoder_optimizer.zero_grad()
-        self.decoder_optimizer.zero_grad()
-        self.predictor_optimizer.zero_grad()
+        self.model_optimizer.zero_grad()
+        # self.encoder_optimizer.zero_grad()
+        # self.decoder_optimizer.zero_grad()
+        # self.predictor_optimizer.zero_grad()
 
         self.predictor.init_hidden_states()
-
-        h_prev = self.encoder(x[0])
         mse = 0
         
-        for i in range(1,self.past_frames+self.future_frames):
+    
+        for i in range(0,(self.past_frames+self.future_frames)-1):
             
-            lstm_ouputs = self.predictor(h_prev)
-            x_pred = self.decoder(lstm_ouputs)
-            h_prev = self.encoder(x[i])
-            mse+=self.loss(x_pred,x[i])
-
+            encoded = self.encoder(x[i])
+            lstm_ouputs = self.predictor(encoded)
+        
+            x_pred = self.decoder([encoded,lstm_ouputs],skip_connection= self.skip_connection)
+    
+            # h_prev = self.encoder(x[i])
+            mse += self.loss(x_pred,x[i+1])
+       
         mse.backward()
 
-        self.predictor_optimizer.step()
-        self.encoder_optimizer.step()
-        self.decoder_optimizer.step()
+        self.model_optimizer.step()
 
         return mse.data.cpu().numpy()/(self.past_frames+self.future_frames)
     
@@ -86,26 +89,25 @@ class TrainerBase:
         
         self.predictor.init_hidden_states()
         all_gen = []
-        x_in = test_batch[0]
-        all_gen.append(x_in)
+        x_input = test_batch[0]
+        all_gen.append(x_input)
         
         for i in range(1, self.past_frames+self.future_frames):
             
-            encoded_skips = self.encoder(x_in)
-            encoded_skips = [encoded.detach() for encoded in encoded_skips]
+            encoded_skips = self.encoder(x_input)
                 
             if i < self.past_frames:
                 self.predictor(encoded_skips)
-                x_in = test_batch[i]
-                all_gen.append(x_in)
+                x_input = test_batch[i]
+                all_gen.append(x_input)
             else:
                 lstm_outputs = self.predictor(encoded_skips)
-                lstm_outputs = [out.detach() for out in lstm_outputs]
-                x_in = self.decoder(lstm_outputs).detach()
-                all_gen.append(x_in) 
+                x_input = self.decoder(lstm_outputs)
+                all_gen.append(x_input) 
         
        
         all_gen = torch.stack(all_gen)
+        
         return all_gen
 
     
@@ -149,8 +151,9 @@ class TrainerBase:
         val_iter = 0
         num_epochs = self.cfg['train']['max_epoch']
 
-        training_batch_generator = utils.get_training_batch(train_loader)
-        test_batch = next(iter(test_loader))
+        training_batch_generator = utils.get_data_batch(self.cfg,train_loader)
+        test_batch_generator = utils.get_data_batch(self.cfg,test_loader)
+        test_batch = next(iter(test_batch_generator))
         test_batch = test_batch.to(self.device)
 
 
@@ -166,8 +169,14 @@ class TrainerBase:
 
             epoch_mse =0
             val_loss = 0
-            progress_bar = tqdm(range(self.cfg['data']['niters']), total=self.cfg['data']['niters'])
+            if self.cfg['data']['dataset'] == 'KTH':
 
+                progress_bar = tqdm(range(len(train_loader)), total = len(train_loader))
+
+            else:
+
+                progress_bar = tqdm(range(self.cfg['data']['niters']), total=self.cfg['data']['niters'])
+            
             for j in progress_bar:
                 
                 seqs = next(training_batch_generator)
@@ -189,7 +198,8 @@ class TrainerBase:
                 val_loss+=loss
                 val_progress.set_description(f"Val Epoch {i+1} Iter {val_iter+1}: val_loss {val_loss:.5f} ")
                 val_iter+=1
-            self.writer.add_scalar(f'Validation Loss',val_loss, global_step=i)
+
+            self.writer.add_scalar(f'Validation Loss',val_loss / len(val_loader), global_step=i)
             print(f"Training Loss:\ntrain_loss: {epoch_mse}, val_loss: {val_loss}")
             
 
