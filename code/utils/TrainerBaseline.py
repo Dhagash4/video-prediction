@@ -205,7 +205,7 @@ class TrainerBase:
                         'decoder':self.decoder,
                         'predictor': self.predictor,
                         'config': self.cfg},
-                        f'{self.save_path}/model_{i+self.resume_point}.pth')
+                        f'{self.save_path}/model_{i+self.resume_point+1}.pth')
             else:
                 torch.save({
                             'encoder': self.encoder,

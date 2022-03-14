@@ -22,7 +22,7 @@ train:
     max_epoch: 20
     lr: 0.0001
     batch_size: 20
-    resume_point: 19  #from where to start training
+    resume_point: 0  #from where to start training
     optimizer: "adam" #["adam", "rmsprop", "sgd"]
     beta1: 0.9
 
