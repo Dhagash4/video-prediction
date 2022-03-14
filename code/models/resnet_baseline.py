@@ -107,16 +107,22 @@ class ResidualBlockDecoder(nn.Module):
         if(stride==1):
             self.conv1 = nn.Conv2d(in_channels=input_channels, out_channels=output_channels, kernel_size=3, padding=1, stride=1, bias = False)
             self.bn1 = nn.BatchNorm2d(output_channels)
+        else:
+            self.conv1 = nn.ConvTranspose2d(in_channels=input_channels, out_channels=output_channels, kernel_size=3, padding=1,  output_padding=1, stride=2, bias = False)
+            self.bn1 = nn.BatchNorm2d(output_channels)
 
         self.upsample = None
         if upsample:
-            self.conv1 = nn.ConvTranspose2d(in_channels=input_channels, out_channels=output_channels, kernel_size=3, padding=1,  output_padding=1, stride=2, bias = False)
-            self.bn1 = nn.BatchNorm2d(output_channels)
+            # self.conv1 = nn.ConvTranspose2d(in_channels=input_channels, out_channels=output_channels, kernel_size=3, padding=1,  output_padding=1, stride=2, bias = False)
+            # self.bn1 = nn.BatchNorm2d(output_channels)
             self.upsample = nn.Sequential(nn.ConvTranspose2d(in_channels=input_channels, out_channels=output_channels, kernel_size=3, padding=1,  output_padding=1, stride=2, bias = False),
                                           nn.BatchNorm2d(output_channels))
 
 
     def forward(self,x):
+
+        if self.upsample is not None:
+            x = self.upsample(x)
 
         y = self.conv2(x)
         y = self.bn2(y)
@@ -124,9 +130,6 @@ class ResidualBlockDecoder(nn.Module):
 
         y = self.conv1(y)
         y = self.bn1(y)
-
-        if self.upsample is not None:
-            x = self.upsample(x)
 
         out = y+x
         out = self.lrelu(out)

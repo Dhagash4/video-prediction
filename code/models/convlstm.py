@@ -75,20 +75,32 @@ class ConvLSTMCell(nn.Module):
 
 class predictor_lstm(nn.Module):
     
-    def __init__(self, input_dim = (64,32,32), hidden_dim = [64,64], kernels = [(5,5),(3,3)], return_all_layers = False,
-                num_layers=2, mode="zeros",  batch_size =40, bias=True, device = "cpu"):
+    def __init__(self, input_dim = (64,32,32), hidden_dim = 64, kernel_sizes = (5,5), return_all_layers = False,
+                num_layers=2, mode="zeros",  batch_size = 40, bias=True, device = "cpu"):
         """ Module initializer """
         assert mode in ["zeros", "random", "learned"]
         super().__init__()
-        self.input_dim = input_dim[0]
+
         self.num_layers = num_layers
-        self.hidden_dim =  hidden_dim if self.num_layers>=2 else hidden_dim[0]
-        self.kernels = kernels if self.num_layers>=2 else kernels[0]
         self.mode = mode
         self.batch_size = batch_size
         self.device = device
         self.return_all_layers = return_all_layers
         self.bias = bias
+
+        if type(hidden_dim) is list:
+            assert self.num_layers == len(hidden_dim)
+            self.hidden_dim = hidden_dim
+        else:
+            self.hidden_dim = self._extend_for_multilayer(hidden_dim, self.num_layers)
+
+        if type(kernel_sizes) is list:
+            assert self.num_layers == len(kernel_sizes)
+            self.kernel_sizes = kernel_sizes
+        else:
+            self.kernel_sizes = self._extend_for_multilayer(kernel_sizes, self.num_layers)
+        
+        self.input_dim = input_dim[0] 
         conv_lstms  = []
         self.image_size = input_dim
         # iterating over no of layers
@@ -97,7 +109,7 @@ class predictor_lstm(nn.Module):
 
             conv_lstms.append(ConvLSTMCell(input_dim=cur_input_dim,
                                           hidden_dim=self.hidden_dim[i],
-                                          kernel_size=self.kernels[i],
+                                          kernel_size=self.kernel_sizes[i],
                                           bias=self.bias,
                                           image_size = self.image_size,
                                           device = self.device))
@@ -126,5 +138,12 @@ class predictor_lstm(nn.Module):
         for i in range(self.num_layers):
             init_states.append(self.conv_lstms[i].init_state(self.batch_size, self.image_size))
         return init_states
+    
+    @staticmethod
+    def _extend_for_multilayer(param, num_layers):
+        if not isinstance(param, list):
+            param = [param] * num_layers
+        return param
+
 
 
