@@ -65,9 +65,9 @@ class TrainerBase:
         for i in range(0,(self.past_frames+self.future_frames)-1):
             
             encoded = self.encoder(x[i])
-            lstm_ouputs = self.predictor(encoded)
+            lstm_outputs = self.predictor(encoded)
         
-            x_pred = self.decoder([encoded,lstm_ouputs],skip_connection= self.skip_connection)
+            x_pred = self.decoder([encoded,lstm_outputs],skip_connection= self.skip_connection)
     
             # h_prev = self.encoder(x[i])
             mse += self.loss(x_pred,x[i+1])
@@ -119,13 +119,13 @@ class TrainerBase:
         self.predictor.eval()
         self.encoder.eval()
         self.decoder.eval()
+        self.predictor.init_hidden_states()
         val_mse = 0.0
         x_in = x[0]
         
         for i in range(1,self.past_frames+self.future_frames):
             
             encoded_skips = self.encoder(x_in)
-            encoded_skips = [encoded.detach() for encoded in encoded_skips]
                 
             if i < self.past_frames:
                 
@@ -135,8 +135,8 @@ class TrainerBase:
             else:
                 
                 lstm_outputs = self.predictor(encoded_skips)
-                lstm_outputs = [out.detach() for out in lstm_outputs]
-                x_in = self.decoder(lstm_outputs).detach()
+                
+                x_in = self.decoder([encoded_skips,lstm_outputs],skip_connection= self.skip_connection)
 
                 val_mse+=self.loss(x_in,x[i])
         
@@ -187,7 +187,7 @@ class TrainerBase:
                 self.writer.add_scalar(f'Training Loss',mse, global_step=niter)
                 niter+=1
 
-            """validation loop"""
+            # """validation loop"""
 
             val_progress = tqdm(enumerate(val_loader), total=len(val_loader))
 
