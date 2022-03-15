@@ -102,7 +102,7 @@ class TrainerBase:
                 all_gen.append(x_input)
             else:
                 lstm_outputs = self.predictor(encoded_skips)
-                x_input = self.decoder(lstm_outputs)
+                x_input = self.decoder([encoded_skips,lstm_outputs],skip_connection= self.skip_connection)
                 all_gen.append(x_input) 
         
        
