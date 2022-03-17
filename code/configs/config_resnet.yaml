@@ -17,16 +17,16 @@ logger:
 
 ##Training
 train:
-    n_gpus: 1
+    device: 2
     num_workers: 12
-    max_epoch: 100
-    lr: 0.0001
+    max_epoch: 200
+    lr: 0.0002
     batch_size: 20
     resume_point: 19  #from where to start training
     optimizer: "adam" #["adam", "rmsprop", "sgd"]
     beta1: 0.9
     scheduler: "step" 
-    step_size: 40
+    step_size: 50
     gamma: 0.1
 
 architecture:

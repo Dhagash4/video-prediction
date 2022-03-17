@@ -20,7 +20,7 @@ from models.dcgan_baseline import DCGANEncoder, DCGANDecoder
 from models.vgg_baseline import *
 from utils.utils import load_dataset
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+#device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
 
 @click.command()
 @click.option('--config',
@@ -44,11 +44,12 @@ def main(config):
     beta1 = cfg['train']['beta1']
     embedding = cfg['experiment']['embedding']
     skip_connection = cfg['architecture']['skip']
-
+    gpu_num = cfg['train']['device']
     """Model configurations"""
 
     mode = cfg['architecture']['lstm']['mode']
     num_layers = cfg['architecture']['lstm']['num_layers']
+    device = torch.device(f"cuda:{gpu_num}" if torch.cuda.is_available() else "cpu")
 
     """Loding models"""
 
