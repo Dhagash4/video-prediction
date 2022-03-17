@@ -40,6 +40,7 @@ def main(config):
     saving_path = os.path.join(cfg['logger']['checkpoints'],f"{cfg['experiment']['id']}_{cfg['experiment']['embedding']}_{cfg['experiment']['predictor']}")
     model_resume = cfg['train']['resume_point']
     optimizer = cfg['train']['optimizer']
+    scheduler = cfg['train']['scheduler']
     beta1 = cfg['train']['beta1']
     embedding = cfg['experiment']['embedding']
     skip_connection = cfg['architecture']['skip']
@@ -100,17 +101,27 @@ def main(config):
     else:
         raise ValueError('Unknown optimizer: %s' % optimizer)
 
+
+    """scheduler"""
+
+    if scheduler == "step":
+        scheduler = torch.optim.lr_scheduler.StepLR
+    else:
+        raise ValueError('Unknown scheduler: %s' % optimizer)
+
     """loding datasets"""
     train_loader,val_loader,test_loader = load_dataset(cfg=cfg)
 
 
     """training and logging"""
+
     trainer = TrainerBase(device=device,
                           config=cfg,
                           encoder=encoder,
                           decoder=decoder,
                           predictor=predictor,
                           optimizer=optimizer,
+                          scheduler=scheduler,
                           save_path=saving_path,
                           writer=logging_path,resume_point=model_resume)
 
