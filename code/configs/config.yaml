@@ -21,7 +21,7 @@ train:
     num_workers: 8
     max_epoch: 5
     lr: 0.0001
-    batch_size: 10
+    batch_size: 5
     resume_point: 0  #from where to start training
     optimizer: "adam" #["adam", "rmsprop", "sgd"]
     beta1: 0.9

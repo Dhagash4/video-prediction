@@ -47,7 +47,7 @@ class TrainerBase:
         
         params = list(self.encoder.parameters()) + list(self.decoder.parameters()) + list(self.predictor.parameters())
         self.model_optimizer = self.optimizer(params,lr=self.lr, betas = (0.9, 0.999))
-        
+
         self.model_scheduler = self.scheduler(self.model_optimizer,step_size = self.cfg['train']['step_size'], gamma=self.cfg['train']['gamma'])
 
         self.loss = nn.MSELoss()
@@ -77,6 +77,7 @@ class TrainerBase:
         mse.backward()
 
         self.model_optimizer.step()
+        self.model_scheduler.step()
 
         return mse.data.cpu().numpy()/(self.past_frames+self.future_frames)
     
