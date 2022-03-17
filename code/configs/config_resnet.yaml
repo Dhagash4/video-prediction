@@ -1,5 +1,5 @@
 experiment:
-    id: kth_2
+    id: kth_2_skip
     embedding: resnet
     predictor: convlstm
 
@@ -18,18 +18,21 @@ logger:
 ##Training
 train:
     n_gpus: 1
-    num_workers: 16
+    num_workers: 12
     max_epoch: 100
     lr: 0.0001
     batch_size: 20
     resume_point: 19  #from where to start training
     optimizer: "adam" #["adam", "rmsprop", "sgd"]
     beta1: 0.9
+    scheduler: "step" 
+    step_size: 40
+    gamma: 0.1
 
 architecture:
     lstm:
         mode: 'zeros' #["zeros", "random", "learned"]
         num_layers: 2
         
-    skip: False
+    skip: True
         
