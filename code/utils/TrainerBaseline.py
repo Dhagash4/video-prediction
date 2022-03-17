@@ -14,7 +14,7 @@ class TrainerBase:
     """
     Class for initializing network and training it
     """
-    def __init__(self,  config, device, encoder, decoder, predictor,optimizer,save_path,writer, resume_point):
+    def __init__(self,  config, device, encoder, decoder, predictor,optimizer,scheduler,save_path,writer, resume_point):
         
         """ Initialzer """
         
@@ -32,6 +32,7 @@ class TrainerBase:
         self.save_path = save_path
         
         self.optimizer = optimizer
+        self.scheduler = scheduler
         self.beta1 = self.cfg['train']['beta1']
         self.best_val_loss = 1e4
         
@@ -43,11 +44,12 @@ class TrainerBase:
 
 
         """Optimization Parameters"""
+        
         params = list(self.encoder.parameters()) + list(self.decoder.parameters()) + list(self.predictor.parameters())
         self.model_optimizer = self.optimizer(params,lr=self.lr, betas = (0.9, 0.999))
-        # self.encoder_optimizer = self.optimizer(self.encoder.parameters(), lr=self.lr, betas = (0.9, 0.999))
-        # self.decoder_optimizer = self.optimizer(self.decoder.parameters(), lr=self.lr, betas = (0.9, 0.999))
-        # self.predictor_optimizer = self.optimizer(self.predictor.parameters(), lr=self.lr, betas = (0.9, 0.999))
+
+        self.model_scheduler = self.scheduler(self.model_optimizer,step_size = self.cfg['train']['step_size'], gamma=self.cfg['train']['gamma'])
+
         self.loss = nn.MSELoss()
 
     def train_one_step(self, x):
@@ -75,6 +77,7 @@ class TrainerBase:
         mse.backward()
 
         self.model_optimizer.step()
+        self.model_scheduler.step()
 
         return mse.data.cpu().numpy()/(self.past_frames+self.future_frames)
     
