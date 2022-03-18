@@ -29,32 +29,25 @@ class ConvLSTMCell(nn.Module):
         
 
     def forward(self, x, cur_state):
+        """credits: https://github.com/ndrplz/ConvLSTM_pytorch/blob/master/convlstm.py"""
         
         h_cur, c_cur = cur_state
-        x = x.to(self.device)
-        h_cur = h_cur.to(self.device)
 
-        concat_input_hcur = torch.cat([x, h_cur], dim=1) 
-        concat_input_hcur = concat_input_hcur.to(self.device)
+        combined = torch.cat([x, h_cur], dim=1)  # concatenate along channel axis
 
-        concat_input_hcur_conv = self.conv(concat_input_hcur)
-        concat_input_hcur_conv = concat_input_hcur_conv.to(self.device)
+        combined_conv = self.conv(combined)
+        cc_i, cc_f, cc_o, cc_g = torch.split(combined_conv, self.hidden_dim, dim=1)
+        i = torch.sigmoid(cc_i)
+        f = torch.sigmoid(cc_f)
+        o = torch.sigmoid(cc_o)
+        g = torch.tanh(cc_g)
 
-        cc_input_gate, cc_forget_gate, cc_output_gate, cc_output = torch.split(concat_input_hcur_conv, self.hidden_dim, dim=1)
-        
-        input_gate = torch.sigmoid(cc_input_gate + self.W_ci * c_cur)
-
-        forget_gate = torch.sigmoid(cc_forget_gate + self.W_cf * c_cur)
-
-        output = torch.tanh(cc_output)
-
-        c_next = forget_gate * c_cur + input_gate * output
-
-        output_gate = torch.sigmoid(cc_output_gate + self.W_co * c_next)
-
-        h_next = output * torch.tanh(c_next)
+        c_next = f * c_cur + i * g
+        h_next = o * torch.tanh(c_next)
 
         return h_next, c_next
+
+        # return h_next, c_next
 
     def init_state(self, batch_size, image_size):
         height, width = image_size[1], image_size[2]

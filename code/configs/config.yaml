@@ -1,5 +1,5 @@
 experiment:
-    id: kth
+    id: mmnist_skip
     embedding: resnet
     predictor: convlstm
 
@@ -34,7 +34,7 @@ architecture:
         mode: 'zeros' #["zeros", "random", "learned"]
         num_layers: 2
         
-    skip: False
+    skip: True
 
    
         
