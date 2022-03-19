@@ -156,21 +156,6 @@ class Resnet18Decoder(nn.Module):
 
 
         self.layer3 = self._make_layer(256*(skip-1), 128,  upsample=True)
-=======
-        skip = 2
-        # if not skip_connection:
-        #     skip = 2
-        # else:
-        #     skip = 2
-        #     self.lstm_hidden_conv0 = nn.Conv2d(in_channels=256*2, out_channels=256*2, kernel_size=1, padding=0, stride=1, bias = False)
-        #     self.lstm_hidden_conv1 = nn.Conv2d(in_channels=128*2, out_channels=128, kernel_size=1, padding=0, stride=1, bias = False)
-        #     self.skip_conv1 = nn.Conv2d(in_channels=128*2, out_channels=128*2, kernel_size=1, padding=0, stride=1, bias = False)
-        #     self.lstm_hidden_conv2 = nn.Conv2d(in_channels=64*2, out_channels=64, kernel_size=1, padding=0, stride=1, bias = False)
-        #     self.skip_conv2 = nn.Conv2d(in_channels=64*2, out_channels=64*2, kernel_size=1, padding=0, stride=1, bias = False)
-
-
-        self.layer3 = self._make_layer(256, 128,  upsample=True)
->>>>>>> 059758a93bd2372cb5116d3e281a97b8a396e005
         self.layer2 = self._make_layer(128*skip, 64, upsample=True)
         self.layer1 = self._make_layer(64*skip, 64, upsample=False)
 
@@ -229,8 +214,4 @@ class Resnet18Decoder(nn.Module):
         #     l1 = self.layer1(skip_in2)
         #     out = self.upc6(self.upsamp(l1))
 
-<<<<<<< HEAD
         return out
-=======
-        #     return out
->>>>>>> 059758a93bd2372cb5116d3e281a97b8a396e005
