@@ -4,6 +4,7 @@ experiment:
     predictor: convlstm
 
 ##Data
+
 data:
     dataset: "MMNIST"  #['MMNIST','KTH']
     seq: 20
@@ -16,6 +17,7 @@ logger:
     checkpoints: "checkpoints/" #Default path checkpoints/DIR_NAME
 
 ##Training
+
 train:
     device: 0
     num_workers: 4
