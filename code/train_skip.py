@@ -13,7 +13,7 @@ from torchvision import datasets, models, transforms
 
 
 from utils.visualizations import *
-from utils.TrainerBaseline import *
+from utils.TrainerBaseline_skip import *
 from models.baselineLSTM import predictor as lstm
 from models.resnet_skip import Resnet18Encoder, Resnet18Decoder
 from models.dcgan_baseline import DCGANEncoder, DCGANDecoder
