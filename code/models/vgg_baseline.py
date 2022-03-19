@@ -81,13 +81,14 @@ class VGGEncoder(nn.Module):
 
 class VGGDecoder(nn.Module):
  
-    def __init__(self,skip_connection=False):
+    def __init__(self):
 
         super(VGGDecoder, self).__init__()
-        if not skip_connection:
-            skip = 2
-        else:
-            skip = 3
+        skip=2
+        # if not skip_connection:
+        #     skip = 2
+        # else:
+        #     skip = 3
         
         
         self.vgg_block_dec3 = nn.Sequential(
@@ -107,27 +108,27 @@ class VGGDecoder(nn.Module):
                     nn.Sigmoid()
                     )
              
-    def forward(self, x, skip_connection = False):
+    def forward(self, x):
         
-        if not skip_connection:
+        # if not skip_connection:
             
-            _,lstm_outputs = x
-            
-            v3 = self.vgg_block_dec3(lstm_outputs[2])
-
-            v2 = self.vgg_block_dec2(torch.cat([v3, lstm_outputs[1]], 1))
-
-            v1 = self.vgg_block_dec1(torch.cat([v2, lstm_outputs[0]], 1))
+        lstm_outputs = x
         
-        else:
+        v3 = self.vgg_block_dec3(lstm_outputs[2])
 
-            encoded, lstm_outputs = x
+        v2 = self.vgg_block_dec2(torch.cat([v3, lstm_outputs[1]], 1))
+
+        v1 = self.vgg_block_dec1(torch.cat([v2, lstm_outputs[0]], 1))
+    
+        # else:
+
+        #     encoded, lstm_outputs = x
             
-            v3 = self.vgg_block_dec3(torch.cat([encoded[2],lstm_outputs[2]],1))
+        #     v3 = self.vgg_block_dec3(torch.cat([encoded[2],lstm_outputs[2]],1))
 
-            v2 = self.vgg_block_dec2(torch.cat([v3, encoded[1], lstm_outputs[1]], 1))
+        #     v2 = self.vgg_block_dec2(torch.cat([v3, encoded[1], lstm_outputs[1]], 1))
 
-            v1 = self.vgg_block_dec1(torch.cat([v2, encoded[0], lstm_outputs[0]], 1))
+        #     v1 = self.vgg_block_dec1(torch.cat([v2, encoded[0], lstm_outputs[0]], 1))
 
         
         return v1

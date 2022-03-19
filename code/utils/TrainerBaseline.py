@@ -2,6 +2,7 @@
 # from models.lstm import *
 # from models.resnet import *
 
+from tabnanny import verbose
 from unittest import skip
 import torch
 import torch.nn as nn
@@ -26,7 +27,7 @@ class TrainerBase:
         self.last_frame_skip = True
         self.device = device
         self.resume_point = resume_point
-        self.skip_connection = self.cfg['architecture']['skip']
+        # self.skip_connection = self.cfg['architecture']['skip']
        
         self.writer = SummaryWriter(writer)
         self.save_path = save_path
@@ -48,7 +49,8 @@ class TrainerBase:
         params = list(self.encoder.parameters()) + list(self.decoder.parameters()) + list(self.predictor.parameters())
         self.model_optimizer = self.optimizer(params,lr=self.lr, betas = (0.9, 0.999))
 
-        self.model_scheduler = self.scheduler(self.model_optimizer,step_size = self.cfg['train']['step_size'], gamma=self.cfg['train']['gamma'])
+        # self.model_scheduler = self.scheduler(self.model_optimizer,step_size = self.cfg['train']['step_size'], gamma=self.cfg['train']['gamma'])
+        self.model_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.model_optimizer,verbose=True)
 
         self.loss = nn.MSELoss()
 
@@ -69,7 +71,8 @@ class TrainerBase:
             encoded = self.encoder(x[i])
             lstm_outputs = self.predictor(encoded)
         
-            x_pred = self.decoder([encoded,lstm_outputs],skip_connection= self.skip_connection)
+            # x_pred = self.decoder([encoded,lstm_outputs],skip_connection= self.skip_connection)
+            x_pred = self.decoder(lstm_outputs)
     
             # h_prev = self.encoder(x[i])
             mse += self.loss(x_pred,x[i+1])
@@ -77,7 +80,7 @@ class TrainerBase:
         mse.backward()
 
         self.model_optimizer.step()
-        self.model_scheduler.step()
+        
 
         return mse.data.cpu().numpy()/(self.past_frames+self.future_frames)
     
@@ -94,7 +97,7 @@ class TrainerBase:
         all_gen = []
         x_input = test_batch[0]
         all_gen.append(x_input)
-        
+        # import ipdb;ipdb.set_trace()
         for i in range(1, self.past_frames+self.future_frames):
             
             encoded_skips = self.encoder(x_input)
@@ -105,7 +108,8 @@ class TrainerBase:
                 all_gen.append(x_input)
             else:
                 lstm_outputs = self.predictor(encoded_skips)
-                x_input = self.decoder([encoded_skips,lstm_outputs],skip_connection= self.skip_connection)
+                # x_input = self.decoder([encoded_skips,lstm_outputs],skip_connection = self.skip_connection)
+                x_input = self.decoder(lstm_outputs)
                 all_gen.append(x_input) 
         
        
@@ -139,8 +143,7 @@ class TrainerBase:
                 
                 lstm_outputs = self.predictor(encoded_skips)
                 
-                x_in = self.decoder([encoded_skips,lstm_outputs],skip_connection= self.skip_connection)
-
+                x_in = self.decoder(lstm_outputs)
                 val_mse+=self.loss(x_in,x[i])
         
        
@@ -155,8 +158,7 @@ class TrainerBase:
         num_epochs = self.cfg['train']['max_epoch']
 
         training_batch_generator = utils.get_data_batch(self.cfg,train_loader)
-        test_batch_generator = utils.get_data_batch(self.cfg,test_loader)
-        test_batch = next(iter(test_batch_generator))
+        test_batch = next(iter(test_loader))
         test_batch = test_batch.to(self.device)
 
 
@@ -187,30 +189,42 @@ class TrainerBase:
                 mse = self.train_one_step(seqs)
                 epoch_mse+=mse
                 progress_bar.set_description(f"Epoch {i+1} Iter {niter+1}: mse_loss {epoch_mse:.5f} ")
-                self.writer.add_scalar(f'Training Loss',mse, global_step=niter)
                 niter+=1
 
-            # """validation loop"""
+            """validation loop"""
 
             val_progress = tqdm(enumerate(val_loader), total=len(val_loader))
 
             for _ , seqs in val_progress:
 
                 seqs = seqs.to(self.device)
+                # seqs = next(val_batch_generator)
                 loss = self.eval_one_step(seqs)
                 val_loss+=loss
                 val_progress.set_description(f"Val Epoch {i+1} Iter {val_iter+1}: val_loss {val_loss:.5f} ")
                 val_iter+=1
-
+            
+            
+            if self.cfg['data']['dataset'] == 'KTH':
+                self.writer.add_scalar(f'Training Loss', mse / len(train_loader), global_step=niter)
+            else:
+                self.writer.add_scalar(f'Training Loss',mse / self.cfg['data']['niters'], global_step=niter)
+            
+            
             self.writer.add_scalar(f'Validation Loss',val_loss / len(val_loader), global_step=i)
+            
             print(f"Training Loss:\ntrain_loss: {epoch_mse}, val_loss: {val_loss}")
             
-
-
             all_gen = self.generate_future_sequences(test_batch)
             grid = show_grid(test_batch,all_gen,nsamples=5,pred_frames=self.past_frames)
             self.writer.add_image('images', grid, global_step=i)
 
+            """scheduler step"""
+
+            self.model_scheduler.step(val_loss/len(val_loader))
+            
+
+            """saving entities"""
             if self.resume_point != 0:
 
                 torch.save({
@@ -220,6 +234,7 @@ class TrainerBase:
                         'config': self.cfg},
                         f'{self.save_path}/model_{i+self.resume_point+1}.pth')
             else:
+
                 torch.save({
                             'encoder': self.encoder,
                             'decoder':self.decoder,
@@ -229,6 +244,7 @@ class TrainerBase:
 
             if val_loss < self.best_val_loss:
 
+                self.best_val_loss = val_loss
                 torch.save({
                     'encoder': self.encoder,
                     'decoder':self.decoder,
