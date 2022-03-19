@@ -43,8 +43,10 @@ def main(config):
     scheduler = cfg['train']['scheduler']
     beta1 = cfg['train']['beta1']
     embedding = cfg['experiment']['embedding']
-    skip_connection = cfg['architecture']['skip']
+    # skip_connection = cfg['architecture']['skip']
     gpu_num = cfg['train']['device']
+
+    
     """Model configurations"""
 
     mode = cfg['architecture']['lstm']['mode']
@@ -66,11 +68,12 @@ def main(config):
         if embedding == "vgg":
             
             encoder = VGGEncoder()
-            decoder = VGGDecoder(skip_connection=skip_connection)
-        
+            # decoder = VGGDecoder(skip_connection=skip_connection)
+            decoder = VGGDecoder()
         elif embedding == "resnet":
             encoder = Resnet18Encoder()
-            decoder = Resnet18Decoder(skip_connection=skip_connection)
+            # decoder = Resnet18Decoder(skip_connection=skip_connection)
+            decoder = Resnet18Decoder()
         
         elif embedding == "dcgan":
 

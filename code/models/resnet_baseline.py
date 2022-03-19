@@ -138,24 +138,39 @@ class ResidualBlockDecoder(nn.Module):
     
 class Resnet18Decoder(nn.Module):
     
-    def __init__(self,skip_connection=False):
+    def __init__(self):
  
         super().__init__()
         self.activation = "LeakyReLU"
         self.lrelu = nn.LeakyReLU(0.2, inplace=True)
-
-        if not skip_connection:
-            skip = 2
-        else:
-            skip = 2
-            self.lstm_hidden_conv0 = nn.Conv2d(in_channels=256*2, out_channels=256*2, kernel_size=1, padding=0, stride=1, bias = False)
-            self.lstm_hidden_conv1 = nn.Conv2d(in_channels=128*2, out_channels=128, kernel_size=1, padding=0, stride=1, bias = False)
-            self.skip_conv1 = nn.Conv2d(in_channels=128*2, out_channels=128*2, kernel_size=1, padding=0, stride=1, bias = False)
-            self.lstm_hidden_conv2 = nn.Conv2d(in_channels=64*2, out_channels=64, kernel_size=1, padding=0, stride=1, bias = False)
-            self.skip_conv2 = nn.Conv2d(in_channels=64*2, out_channels=64*2, kernel_size=1, padding=0, stride=1, bias = False)
+        skip = 2
+        # if not skip_connection:
+        #     skip = 2
+        # else:
+        #     skip = 2
+        #     self.lstm_hidden_conv0 = nn.Conv2d(in_channels=256*2, out_channels=256*2, kernel_size=1, padding=0, stride=1, bias = False)
+        #     self.lstm_hidden_conv1 = nn.Conv2d(in_channels=128*2, out_channels=128, kernel_size=1, padding=0, stride=1, bias = False)
+        #     self.skip_conv1 = nn.Conv2d(in_channels=128*2, out_channels=128*2, kernel_size=1, padding=0, stride=1, bias = False)
+        #     self.lstm_hidden_conv2 = nn.Conv2d(in_channels=64*2, out_channels=64, kernel_size=1, padding=0, stride=1, bias = False)
+        #     self.skip_conv2 = nn.Conv2d(in_channels=64*2, out_channels=64*2, kernel_size=1, padding=0, stride=1, bias = False)
 
 
         self.layer3 = self._make_layer(256*(skip-1), 128,  upsample=True)
+=======
+        skip = 2
+        # if not skip_connection:
+        #     skip = 2
+        # else:
+        #     skip = 2
+        #     self.lstm_hidden_conv0 = nn.Conv2d(in_channels=256*2, out_channels=256*2, kernel_size=1, padding=0, stride=1, bias = False)
+        #     self.lstm_hidden_conv1 = nn.Conv2d(in_channels=128*2, out_channels=128, kernel_size=1, padding=0, stride=1, bias = False)
+        #     self.skip_conv1 = nn.Conv2d(in_channels=128*2, out_channels=128*2, kernel_size=1, padding=0, stride=1, bias = False)
+        #     self.lstm_hidden_conv2 = nn.Conv2d(in_channels=64*2, out_channels=64, kernel_size=1, padding=0, stride=1, bias = False)
+        #     self.skip_conv2 = nn.Conv2d(in_channels=64*2, out_channels=64*2, kernel_size=1, padding=0, stride=1, bias = False)
+
+
+        self.layer3 = self._make_layer(256, 128,  upsample=True)
+>>>>>>> 059758a93bd2372cb5116d3e281a97b8a396e005
         self.layer2 = self._make_layer(128*skip, 64, upsample=True)
         self.layer1 = self._make_layer(64*skip, 64, upsample=False)
 
@@ -181,35 +196,41 @@ class Resnet18Decoder(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def forward(self,x,skip_connection=False):
+    def forward(self,x):
 
-        if not skip_connection:
+        # if not skip_connection:
   
-            _,lstm_outputs = x
+        lstm_outputs = x
 
-            l3 = self.layer3(lstm_outputs[2])
+        l3 = self.layer3(lstm_outputs[2])
 
-            l2 = self.layer2(torch.cat([l3, lstm_outputs[1]], 1))
+        l2 = self.layer2(torch.cat([l3, lstm_outputs[1]], 1))
 
-            l1 = self.layer1(torch.cat([l2, lstm_outputs[0]], 1))
-            
-            out = self.upc6(self.upsamp(l1))
+        l1 = self.layer1(torch.cat([l2, lstm_outputs[0]], 1))
         
-        else:
-
-            encoded,lstm_outputs = x
-            skip_in0 = self.lrelu(self.lstm_hidden_conv0(torch.cat([encoded[2], lstm_outputs[2]],1)))
-            l3 = self.layer3(skip_in0)
-
-            lstm_skip_in1 = self.lrelu(self.lstm_hidden_conv1(torch.cat([l3, lstm_outputs[1]],1)))
-            skip_in1 = self.lrelu(self.skip_conv1(torch.cat([encoded[1], lstm_skip_in1], 1)))
-
-            l2 = self.layer2(skip_in1)
-
-            lstm_skip_in2 = self.lrelu(self.lstm_hidden_conv2(torch.cat([l2, lstm_outputs[0]],1)))
-            skip_in2 = self.lrelu(self.skip_conv2(torch.cat([encoded[0], lstm_skip_in2], 1)))
-
-            l1 = self.layer1(skip_in2)
-            out = self.upc6(self.upsamp(l1))
+        out = self.upc6(self.upsamp(l1))
 
         return out
+    
+        # else:
+
+        #     encoded,lstm_outputs = x
+        #     skip_in0 = self.lrelu(self.lstm_hidden_conv0(torch.cat([encoded[2], lstm_outputs[2]],1)))
+        #     l3 = self.layer3(skip_in0)
+
+        #     lstm_skip_in1 = self.lrelu(self.lstm_hidden_conv1(torch.cat([l3, lstm_outputs[1]],1)))
+        #     skip_in1 = self.lrelu(self.skip_conv1(torch.cat([encoded[1], lstm_skip_in1], 1)))
+
+        #     l2 = self.layer2(skip_in1)
+
+        #     lstm_skip_in2 = self.lrelu(self.lstm_hidden_conv2(torch.cat([l2, lstm_outputs[0]],1)))
+        #     skip_in2 = self.lrelu(self.skip_conv2(torch.cat([encoded[0], lstm_skip_in2], 1)))
+
+        #     l1 = self.layer1(skip_in2)
+        #     out = self.upc6(self.upsamp(l1))
+
+<<<<<<< HEAD
+        return out
+=======
+        #     return out
+>>>>>>> 059758a93bd2372cb5116d3e281a97b8a396e005
