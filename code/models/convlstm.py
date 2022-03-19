@@ -48,14 +48,12 @@ class ConvLSTMCell(nn.Module):
 
         # return h_next, c_next
         h_cur, c_cur = cur_state
-        x = x.to(self.device)
-        h_cur = h_cur.to(self.device)
 
         concat_input_hcur = torch.cat([x, h_cur], dim=1) 
-        concat_input_hcur = concat_input_hcur.to(self.device)
+       
 
         concat_input_hcur_conv = self.conv(concat_input_hcur)
-        concat_input_hcur_conv = concat_input_hcur_conv.to(self.device)
+       
 
         cc_input_gate, cc_forget_gate, cc_output_gate, cc_output = torch.split(concat_input_hcur_conv, self.hidden_dim, dim=1)
         

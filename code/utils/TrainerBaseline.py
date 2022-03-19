@@ -221,7 +221,7 @@ class TrainerBase:
 
             """scheduler step"""
 
-            self.model_scheduler.step(val_loss/len(val_loader))
+            self.model_scheduler.step(val_loss / len(val_loader))
             
 
             """saving entities"""
