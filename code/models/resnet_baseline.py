@@ -155,7 +155,7 @@ class Resnet18Decoder(nn.Module):
             self.skip_conv2 = nn.Conv2d(in_channels=64*2, out_channels=64*2, kernel_size=1, padding=0, stride=1, bias = False)
 
 
-        self.layer3 = self._make_layer(256*skip, 128,  upsample=True)
+        self.layer3 = self._make_layer(256*(skip-1), 128,  upsample=True)
         self.layer2 = self._make_layer(128*skip, 64, upsample=True)
         self.layer1 = self._make_layer(64*skip, 64, upsample=False)
 

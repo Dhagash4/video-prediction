@@ -1,5 +1,5 @@
 experiment:
-    id: kth_2_skip
+    id: kth_2
     embedding: resnet
     predictor: convlstm
 
@@ -20,7 +20,7 @@ train:
     device: 2
     num_workers: 12
     max_epoch: 200
-    lr: 0.0002
+    lr: 0.0001
     batch_size: 20
     resume_point: 19  #from where to start training
     optimizer: "adam" #["adam", "rmsprop", "sgd"]
@@ -34,5 +34,5 @@ architecture:
         mode: 'zeros' #["zeros", "random", "learned"]
         num_layers: 2
         
-    skip: True
+    skip: False
         
