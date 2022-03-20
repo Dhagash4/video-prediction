@@ -10,7 +10,7 @@ import torch
 import torch.nn as nn
 import torchvision
 from torchvision import datasets, models, transforms
-
+import random
 
 from utils.visualizations import *
 from utils.TrainerBaseline import *
@@ -43,7 +43,7 @@ def main(config):
     scheduler = cfg['train']['scheduler']
     beta1 = cfg['train']['beta1']
     embedding = cfg['experiment']['embedding']
-    # skip_connection = cfg['architecture']['skip']
+    skip_connection = cfg['architecture']['skip']
     gpu_num = cfg['train']['device']
 
     
@@ -52,9 +52,12 @@ def main(config):
     mode = cfg['architecture']['lstm']['mode']
     num_layers = cfg['architecture']['lstm']['num_layers']
     device = torch.device(f"cuda:{gpu_num}" if torch.cuda.is_available() else "cpu")
+    random_seed = cfg['random_seed']
+    
+    """set random seed"""
+    utils.set_random_seed(random_seed=random_seed)
 
     """Loding models"""
-
     if (model_resume != 0) and os.path.exists(os.path.join(saving_path,f"model_{model_resume}.pth")):
         saved_model = torch.load(os.path.join(saving_path,f"model_{model_resume}.pth"))
         encoder = saved_model['encoder']
@@ -62,18 +65,19 @@ def main(config):
         predictor = saved_model['predictor']
         cfg = saved_model['config']
         optimizer = cfg['train']['optimizer']
+        
         print(f"continuing from {model_resume}")
         
     else:
         if embedding == "vgg":
             
             encoder = VGGEncoder()
-            # decoder = VGGDecoder(skip_connection=skip_connection)
+            decoder = VGGDecoder(skip_connection=skip_connection)
             decoder = VGGDecoder()
         elif embedding == "resnet":
             encoder = Resnet18Encoder()
-            # decoder = Resnet18Decoder(skip_connection=skip_connection)
-            decoder = Resnet18Decoder()
+            decoder = Resnet18Decoder(skip_connection=skip_connection)
+            # decoder = Resnet18Decoder()
         
         elif embedding == "dcgan":
 

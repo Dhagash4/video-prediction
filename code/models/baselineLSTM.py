@@ -11,18 +11,19 @@ class predictor(nn.Module):
         assert mode in ["zeros", "random", "learned"]
         self.device = device
         self.mode = mode
+        self.batch_size = batch_size
         
 
         self.convlstm1 = predictor_lstm(input_dim = (64,32,32), hidden_dim = 64, kernel_sizes = (5,5), return_all_layers = False,
-                num_layers=num_layers, mode="zeros",  batch_size =batch_size, bias=True, device = self.device)
+                num_layers=num_layers, mode="zeros",  batch_size = self.batch_size, bias=True, device = self.device)
         
 
         self.convlstm2 = predictor_lstm(input_dim = (128,16,16), hidden_dim =128, kernel_sizes = (5,5), return_all_layers = False,
-                num_layers=num_layers, mode="zeros",  batch_size =batch_size, bias=True, device = self.device)
+                num_layers=num_layers, mode="zeros",  batch_size =self.batch_size, bias=True, device = self.device)
         
 
         self.convlstm3 = predictor_lstm(input_dim = (256,8,8), hidden_dim = 256, kernel_sizes = (5,5), return_all_layers = False,
-                num_layers=num_layers, mode="zeros",  batch_size =batch_size, bias=True, device = self.device)
+                num_layers=num_layers, mode="zeros",  batch_size =self.batch_size, bias=True, device = self.device)
 
          
     def forward(self,x):

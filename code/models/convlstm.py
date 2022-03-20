@@ -2,6 +2,7 @@ from tkinter import image_names
 import torch
 import torch.nn as nn
 import torchvision
+from torch.autograd import Variable
 class ConvLSTMCell(nn.Module):
 
     def __init__(self, input_dim, hidden_dim, kernel_size, bias, image_size = (128,8,8), mode="zeros", device="cpu"):
@@ -96,7 +97,7 @@ class predictor_lstm(nn.Module):
                 num_layers=2, mode="zeros",  batch_size = 40, bias=True, device = "cpu"):
         """ Module initializer """
         assert mode in ["zeros", "random", "learned"]
-        super().__init__()
+        super(predictor_lstm,self).__init__()
 
         self.num_layers = num_layers
         self.mode = mode

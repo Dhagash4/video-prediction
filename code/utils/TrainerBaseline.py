@@ -27,7 +27,7 @@ class TrainerBase:
         self.last_frame_skip = True
         self.device = device
         self.resume_point = resume_point
-        # self.skip_connection = self.cfg['architecture']['skip']
+        self.skip_connection = self.cfg['architecture']['skip']
        
         self.writer = SummaryWriter(writer)
         self.save_path = save_path
@@ -50,7 +50,9 @@ class TrainerBase:
         self.model_optimizer = self.optimizer(params,lr=self.lr, betas = (0.9, 0.999))
 
         # self.model_scheduler = self.scheduler(self.model_optimizer,step_size = self.cfg['train']['step_size'], gamma=self.cfg['train']['gamma'])
-        self.model_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.model_optimizer,verbose=True)
+        # self.model_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.model_optimizer,verbose=True)
+        self.model_scheduler = torch.optim.lr_scheduler.ExponentialLR(self.model_optimizer,gamma=0.9,verbose=True)
+
 
         self.loss = nn.MSELoss()
 
@@ -71,8 +73,8 @@ class TrainerBase:
             encoded = self.encoder(x[i])
             lstm_outputs = self.predictor(encoded)
         
-            # x_pred = self.decoder([encoded,lstm_outputs],skip_connection= self.skip_connection)
-            x_pred = self.decoder(lstm_outputs)
+            x_pred = self.decoder([encoded,lstm_outputs])
+            # x_pred = self.decoder(lstm_outputs)
     
             # h_prev = self.encoder(x[i])
             mse += self.loss(x_pred,x[i+1])
@@ -82,7 +84,7 @@ class TrainerBase:
         self.model_optimizer.step()
         
 
-        return mse.data.cpu().numpy()/(self.past_frames+self.future_frames)
+        return mse.data.cpu().numpy()/(((self.past_frames+self.future_frames)))
     
     @torch.no_grad()
     def generate_future_sequences(self, test_batch):
@@ -97,19 +99,22 @@ class TrainerBase:
         all_gen = []
         x_input = test_batch[0]
         all_gen.append(x_input)
-        # import ipdb;ipdb.set_trace()
+
         for i in range(1, self.past_frames+self.future_frames):
             
             encoded_skips = self.encoder(x_input)
                 
             if i < self.past_frames:
+                
                 self.predictor(encoded_skips)
                 x_input = test_batch[i]
                 all_gen.append(x_input)
+
             else:
+
                 lstm_outputs = self.predictor(encoded_skips)
-                # x_input = self.decoder([encoded_skips,lstm_outputs],skip_connection = self.skip_connection)
-                x_input = self.decoder(lstm_outputs)
+                x_input = self.decoder([encoded_skips,lstm_outputs])
+                # x_input = self.decoder(lstm_outputs)
                 all_gen.append(x_input) 
         
        
@@ -142,12 +147,12 @@ class TrainerBase:
             else:
                 
                 lstm_outputs = self.predictor(encoded_skips)
-                
-                x_in = self.decoder(lstm_outputs)
+                x_in = self.decoder([encoded_skips,lstm_outputs])
+                # x_in = self.decoder(lstm_outputs)
                 val_mse+=self.loss(x_in,x[i])
         
        
-        return val_mse.data.cpu().numpy()/(self.future_frames)
+        return val_mse.data.cpu().numpy() / ((self.future_frames))
 
     def train(self, train_loader,val_loader,test_loader):
         
@@ -189,6 +194,7 @@ class TrainerBase:
                 mse = self.train_one_step(seqs)
                 epoch_mse+=mse
                 progress_bar.set_description(f"Epoch {i+1} Iter {niter+1}: mse_loss {epoch_mse:.5f} ")
+                self.writer.add_scalar(f'Training Loss',mse, global_step=niter)
                 niter+=1
 
             """validation loop"""
@@ -198,33 +204,35 @@ class TrainerBase:
             for _ , seqs in val_progress:
 
                 seqs = seqs.to(self.device)
-                # seqs = next(val_batch_generator)
                 loss = self.eval_one_step(seqs)
                 val_loss+=loss
                 val_progress.set_description(f"Val Epoch {i+1} Iter {val_iter+1}: val_loss {val_loss:.5f} ")
+                self.writer.add_scalar(f'Validation Loss',loss, global_step = val_iter)
                 val_iter+=1
             
             
             if self.cfg['data']['dataset'] == 'KTH':
-                self.writer.add_scalar(f'Training Loss', mse / len(train_loader), global_step=niter)
+                self.writer.add_scalar(f'Training Loss per epoch', epoch_mse / (len(train_loader)), global_step=i)
+                print(f"Training Loss:\ntrain_loss: {epoch_mse/ len(train_loader)}, val_loss: {val_loss / len(val_loader)}")
             else:
-                self.writer.add_scalar(f'Training Loss',mse / self.cfg['data']['niters'], global_step=niter)
+                self.writer.add_scalar(f'Training Loss per epoch', epoch_mse / (self.cfg['data']['niters']), global_step=i)
+                print(f"Training Loss:\ntrain_loss: {epoch_mse/ (self.cfg['data']['niters'])}, val_loss: {val_loss / len(val_loader)}")
             
+            self.writer.add_scalar(f'Validation Loss per epoch',val_loss/ (len(val_loader)), global_step = val_iter)
             
-            self.writer.add_scalar(f'Validation Loss',val_loss / len(val_loader), global_step=i)
-            
-            print(f"Training Loss:\ntrain_loss: {epoch_mse}, val_loss: {val_loss}")
-            
+        
             all_gen = self.generate_future_sequences(test_batch)
             grid = show_grid(test_batch,all_gen,nsamples=5,pred_frames=self.past_frames)
             self.writer.add_image('images', grid, global_step=i)
 
             """scheduler step"""
 
-            self.model_scheduler.step(val_loss / len(val_loader))
+            if (i % self.cfg['train']['step_size'] == 0) and (i != 0) :
+                self.model_scheduler.step()
             
 
             """saving entities"""
+
             if self.resume_point != 0:
 
                 torch.save({
@@ -251,7 +259,3 @@ class TrainerBase:
                     'predictor': self.predictor,
                     'config': self.cfg},
                     f'{self.save_path}/best_model.pth')
- 
-
-            
-
