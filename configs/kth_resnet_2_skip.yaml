@@ -18,8 +18,8 @@ logger:
 ##Training
 
 train:
-    device: 0
-    num_workers: 16
+    device: 1
+    num_workers: 8
     max_epoch: 500
     lr: 0.0001
     batch_size: 20

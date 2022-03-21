@@ -4,7 +4,6 @@ import yaml
 import click
 import torch
 
-
 from utils.Trainer import TrainerBase
 from models.predictorLSTM import predictor as lstm
 from models.resnet import Resnet18Encoder, Resnet18Decoder
@@ -44,7 +43,7 @@ def main(config):
     num_layers = cfg['architecture']['lstm']['num_layers']
     device = torch.device(f"cuda:{gpu_num}" if torch.cuda.is_available() else "cpu")
     random_seed = cfg['random_seed']
-    
+ 
     """set random seed"""
     set_random_seed(random_seed=random_seed)
 
