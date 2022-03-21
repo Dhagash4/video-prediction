@@ -134,8 +134,8 @@ dmypy.json
 *.gz
 
 #Data Folder
-code/tboard_logs/
-code/temp/
-code/checkpoints/
-code/data/MMNIST/MNIST/
-code/data/KTH/kth/
+tboard_logs/
+temp/
+checkpoints/
+data/MMNIST/MNIST/
+data/KTH/kth/
