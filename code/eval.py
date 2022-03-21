@@ -66,7 +66,6 @@ def generate_future_sequences(test_batch,skip=False):
 
     """ Generating a bunch of images using current state of generator """
     
-    
     predictor.init_hidden_states()
     gt_seq = []
     pred_seq = []

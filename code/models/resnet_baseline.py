@@ -203,7 +203,7 @@ class Resnet18Decoder(nn.Module):
             out = self.upc6(self.upsamp(l1))
 
         else:
-            lstm_outputs = x
+            _,lstm_outputs = x
 
             l3 = self.layer3(lstm_outputs[2])
 

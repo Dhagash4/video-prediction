@@ -134,7 +134,7 @@ class VGGDecoder(nn.Module):
             v1 = self.vgg_block_dec1(skip_in2)
         
         else:
-            lstm_outputs = x
+            _,lstm_outputs = x
             
             v3 = self.vgg_block_dec3(lstm_outputs[2])
 

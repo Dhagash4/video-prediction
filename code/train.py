@@ -82,7 +82,7 @@ def main(config):
         elif embedding == "dcgan":
 
             encoder = DCGANEncoder()
-            decoder = DCGANDecoder()
+            decoder = DCGANDecoder(skip_connection=skip_connection)
 
         else:
 

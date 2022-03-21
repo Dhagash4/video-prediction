@@ -129,7 +129,7 @@ class DCGANDecoder(nn.Module):
             b1 = self.vgg_block_dec1(skip_in2)
 
         else:
-            lstm_outputs = x
+            _,lstm_outputs = x
             
             b3 = self.block3(lstm_outputs[2])
 

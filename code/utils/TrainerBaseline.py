@@ -10,6 +10,8 @@ from tqdm import tqdm
 from utils.visualizations import *
 import utils.utils as utils
 from torch.utils.tensorboard import SummaryWriter
+from torchvision import transforms
+import lpips
 
 class TrainerBase:
     """
@@ -28,7 +30,8 @@ class TrainerBase:
         self.device = device
         self.resume_point = resume_point
         self.skip_connection = self.cfg['architecture']['skip']
-       
+        self.loss_type = self.cfg['train']['loss']
+        self.transform = transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
         self.writer = SummaryWriter(writer)
         self.save_path = save_path
         
@@ -53,8 +56,10 @@ class TrainerBase:
         # self.model_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.model_optimizer,verbose=True)
         self.model_scheduler = torch.optim.lr_scheduler.ExponentialLR(self.model_optimizer,gamma=0.9,verbose=True)
 
-
-        self.loss = nn.MSELoss()
+        if self.loss_type == "mse":
+            self.loss = nn.MSELoss()
+        elif self.loss_type == "lpips":
+            self.loss = lpips.LPIPS(net="vgg").to(device)
 
     def train_one_step(self, x):
         
@@ -65,7 +70,7 @@ class TrainerBase:
         # self.predictor_optimizer.zero_grad()
 
         self.predictor.init_hidden_states()
-        mse = 0
+        loss = 0
         
     
         for i in range(0,(self.past_frames+self.future_frames)-1):
@@ -77,14 +82,20 @@ class TrainerBase:
             # x_pred = self.decoder(lstm_outputs)
     
             # h_prev = self.encoder(x[i])
-            mse += self.loss(x_pred,x[i+1])
+            if self.loss_type == "mse":
+                loss += self.loss(x_pred,x[i+1])
+
+            elif self.loss_type == "lpips":
+                normalized_gt_seq = self.transform(x[i+1].expand(-1,3,-1,-1))
+                normalized_pred_seq = self.transform(x_pred.expand(-1,3,-1,-1))
+                loss += torch.mean(self.loss.forward(normalized_pred_seq,normalized_gt_seq))
        
-        mse.backward()
+        loss.backward()
 
         self.model_optimizer.step()
         
 
-        return mse.data.cpu().numpy()/(((self.past_frames+self.future_frames)))
+        return loss.data.cpu().numpy()/(((self.past_frames+self.future_frames)))
     
     @torch.no_grad()
     def generate_future_sequences(self, test_batch):
@@ -132,7 +143,7 @@ class TrainerBase:
         self.encoder.eval()
         self.decoder.eval()
         self.predictor.init_hidden_states()
-        val_mse = 0.0
+        val_loss = 0.0
         x_in = x[0]
         
         for i in range(1,self.past_frames+self.future_frames):
@@ -148,11 +159,16 @@ class TrainerBase:
                 
                 lstm_outputs = self.predictor(encoded_skips)
                 x_in = self.decoder([encoded_skips,lstm_outputs])
-                # x_in = self.decoder(lstm_outputs)
-                val_mse+=self.loss(x_in,x[i])
+                if self.loss_type == "mse":
+                    val_loss += self.loss(x_in,x[i])
+                
+                elif self.loss_type == "lpips":
+                    normalized_gt_seq = self.transform(x[i].expand(-1,3,-1,-1))
+                    normalized_pred_seq = self.transform(x_in.expand(-1,3,-1,-1))
+                    val_loss += torch.mean(self.loss.forward(normalized_pred_seq,normalized_gt_seq))
         
        
-        return val_mse.data.cpu().numpy() / ((self.future_frames))
+        return val_loss.data.cpu().numpy() / ((self.future_frames))
 
     def train(self, train_loader,val_loader,test_loader):
         
@@ -193,7 +209,7 @@ class TrainerBase:
                 seqs = seqs.to(self.device)
                 mse = self.train_one_step(seqs)
                 epoch_mse+=mse
-                progress_bar.set_description(f"Epoch {i+1} Iter {niter+1}: mse_loss {epoch_mse:.5f} ")
+                progress_bar.set_description(f"Epoch {i+1} Iter {niter+1}: loss {epoch_mse:.5f} ")
                 self.writer.add_scalar(f'Training Loss',mse, global_step=niter)
                 niter+=1
 
