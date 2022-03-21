@@ -48,6 +48,10 @@ def main(config):
     """set random seed"""
     set_random_seed(random_seed=random_seed)
 
+    """print configuration"""
+
+    print(f"Configuration is:\n{cfg}")
+
     """Loding models"""
     if (model_resume != 0) and os.path.exists(os.path.join(saving_path,f"model_{model_resume}.pth")):
         saved_model = torch.load(os.path.join(saving_path,f"model_{model_resume}.pth"))
