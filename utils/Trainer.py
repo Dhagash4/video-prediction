@@ -243,7 +243,7 @@ class TrainerBase:
 
             """saving entities"""
 
-            if self.resume_point != 0 and ((self.cfg['train']['model_save'] % i == 0)):
+            if self.resume_point != 0 and (((i % self.cfg['train']['model_save']) == 0)):
 
                 torch.save({
                         'encoder': self.encoder,
@@ -251,7 +251,7 @@ class TrainerBase:
                         'predictor': self.predictor,
                         'config': self.cfg},
                         f'{self.save_path}/model_{i+self.resume_point+1}.pth')
-            elif ((self.cfg['train']['model_save'] % i == 0)):
+            elif ((i % self.cfg['train']['model_save']) == 0):
 
                 torch.save({
                             'encoder': self.encoder,
