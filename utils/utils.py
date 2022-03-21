@@ -109,7 +109,7 @@ def eval_dataset(dataset="MMNIST",num_workers=4,seq_len=20,batch_size = 16):
 
 
 
-def get_data_batch(cfg, train_loader, dtype=torch.cuda.FloatTensor):
+def get_data_batch(cfg, train_loader,dtype=torch.FloatTensor):
         while True:
             for sequence in train_loader:
                 if cfg['data']['dataset'] == "MMNIST":
