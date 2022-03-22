@@ -228,7 +228,7 @@ class TrainerBase:
                 self.writer.add_scalar(f'Training Loss per epoch', epoch_mse / (self.cfg['data']['niters']), global_step=i)
                 print(f"Training Loss:\ntrain_loss: {epoch_mse/ (self.cfg['data']['niters'])}, val_loss: {val_loss / len(val_loader)}")
             
-            self.writer.add_scalar(f'Validation Loss per epoch',val_loss/ (len(val_loader)), global_step = val_iter)
+            self.writer.add_scalar(f'Validation Loss per epoch', val_loss/ (len(val_loader)), global_step = i)
             
         
             all_gen = self.generate_future_sequences(test_batch)
