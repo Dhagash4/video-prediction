@@ -221,7 +221,8 @@ class TrainerBase:
                 self.writer.add_scalar(f'Validation Loss',loss, global_step = val_iter)
                 val_iter+=1
             
-            
+            """logging"""
+
             if self.cfg['data']['dataset'] == 'KTH':
                 self.writer.add_scalar(f'Training Loss per epoch', epoch_mse / (len(train_loader)), global_step=i)
                 print(f"Training Loss:\ntrain_loss: {epoch_mse/ len(train_loader)}, val_loss: {val_loss / len(val_loader)}")
@@ -231,7 +232,7 @@ class TrainerBase:
             
             self.writer.add_scalar(f'Validation Loss per epoch', val_loss/ (len(val_loader)), global_step = i)
             
-        
+            
             all_gen = self.generate_future_sequences(test_batch)
             grid = show_grid(test_batch,all_gen,nsamples=5,pred_frames=self.past_frames)
             self.writer.add_image('images', grid, global_step=i)
@@ -263,6 +264,7 @@ class TrainerBase:
 
 
         """saving last model"""
+
         torch.save({    'encoder': self.encoder,
                         'decoder':self.decoder,
                         'predictor': self.predictor,
