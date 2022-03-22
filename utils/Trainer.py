@@ -54,6 +54,7 @@ class TrainerBase:
             self.loss = nn.MSELoss()
         elif self.loss_type == "lpips":
             self.loss = lpips.LPIPS(net="vgg").to(device)
+            self.mse = nn.MSELoss()
 
     def train_one_step(self, x):
         
@@ -82,7 +83,7 @@ class TrainerBase:
             elif self.loss_type == "lpips":
                 normalized_gt_seq = self.transform(x[i+1].expand(-1,3,-1,-1))
                 normalized_pred_seq = self.transform(x_pred.expand(-1,3,-1,-1))
-                loss += torch.mean(self.loss.forward(normalized_pred_seq,normalized_gt_seq))
+                loss += (self.mse(x_pred,x[i+1]) + (0.2) * torch.mean(self.loss.forward(normalized_pred_seq,normalized_gt_seq)))
        
         loss.backward()
 
@@ -159,7 +160,7 @@ class TrainerBase:
                 elif self.loss_type == "lpips":
                     normalized_gt_seq = self.transform(x[i].expand(-1,3,-1,-1))
                     normalized_pred_seq = self.transform(x_in.expand(-1,3,-1,-1))
-                    val_loss += torch.mean(self.loss.forward(normalized_pred_seq,normalized_gt_seq))
+                    val_loss += (self.mse(x_in,x[i]) + (0.2 * torch.mean(self.loss.forward(normalized_pred_seq,normalized_gt_seq))))
         
        
         return val_loss.data.cpu().numpy() / ((self.future_frames))
