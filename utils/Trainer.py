@@ -83,7 +83,7 @@ class TrainerBase:
             elif self.loss_type == "lpips":
                 normalized_gt_seq = self.transform(x[i+1].expand(-1,3,-1,-1))
                 normalized_pred_seq = self.transform(x_pred.expand(-1,3,-1,-1))
-                loss += (self.mse(x_pred,x[i+1]) + (0.2) * torch.mean(self.loss.forward(normalized_pred_seq,normalized_gt_seq)))
+                loss += (self.mse(x_pred,x[i+1]) + (0.4 * torch.mean(self.loss.forward(normalized_pred_seq,normalized_gt_seq))))
        
         loss.backward()
 
@@ -160,7 +160,7 @@ class TrainerBase:
                 elif self.loss_type == "lpips":
                     normalized_gt_seq = self.transform(x[i].expand(-1,3,-1,-1))
                     normalized_pred_seq = self.transform(x_in.expand(-1,3,-1,-1))
-                    val_loss += (self.mse(x_in,x[i]) + (0.2 * torch.mean(self.loss.forward(normalized_pred_seq,normalized_gt_seq))))
+                    val_loss += (self.mse(x_in,x[i]) + (0.4 * torch.mean(self.loss.forward(normalized_pred_seq,normalized_gt_seq))))
         
        
         return val_loss.data.cpu().numpy() / ((self.future_frames))
@@ -232,7 +232,7 @@ class TrainerBase:
             
             self.writer.add_scalar(f'Validation Loss per epoch', val_loss/ (len(val_loader)), global_step = i)
             
-            
+
             all_gen = self.generate_future_sequences(test_batch)
             grid = show_grid(test_batch,all_gen,nsamples=5,pred_frames=self.past_frames)
             self.writer.add_image('images', grid, global_step=i)
