@@ -129,5 +129,3 @@ ssim   = np.concatenate((ssim))
 mse    = np.concatenate((mse))
 mae    = np.concatenate((mae))
 psnr   = np.concatenate((psnr))
-
-
