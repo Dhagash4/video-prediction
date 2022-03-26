@@ -43,7 +43,7 @@ def get_psnr(im1, im2):
     
     return psnr(im1, im2)
 
-def evaluate(gt_seq, pred_seq) -> float:
+def calculate_fvd(gt_seq, pred_seq) -> float:
     with tf.Graph().as_default():
         real = torch_to_tf(gt_seq)
         fake = torch_to_tf(pred_seq)
@@ -60,7 +60,7 @@ def evaluate(gt_seq, pred_seq) -> float:
    
     return fvd_score
 
-def eval_seq(gt_seq, pred_seq, device,loss_fn_vgg,batch_first = False):
+def calculate_metrices(gt_seq, pred_seq, device,loss_fn_vgg,batch_first = False):
     
     # if sequence is (bs, seq_len, nc, h, w) i.e batch first => make seq first
     if batch_first:

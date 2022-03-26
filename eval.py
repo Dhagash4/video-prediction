@@ -1,131 +1,153 @@
-
-
-from tqdm import tqdm
-import numpy as np
-import matplotlib.pyplot as plt
-import yaml
-import click
-
-import torch
-import torch.nn as nn
-import torchvision
-from torchvision import datasets, models, transforms
-import random
-import argparse
 import lpips
-
-# from utils.visualizations import *
-# from utils.TrainerBaseline import *
-# from models.baselineLSTM import predictor as lstm
-# from models.resnet_baseline import Resnet18Encoder, Resnet18Decoder
-# from models.dcgan_baseline import DCGANEncoder, DCGANDecoder
-# from models.vgg_baseline import *
-from utils.utils import eval_dataset,set_random_seed
-from model_eval.metrices import eval_seq
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
+from tqdm import tqdm
+from model_eval.metrices import calculate_fvd, calculate_metrices
+from utils.utils import eval_dataset, set_random_seed
+from utils.visualizations import save_grid_batch
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--batch_size', default=32, type=int, help='batch size')
-parser.add_argument('--dataset', default='MMNIST', help='dataset name')
-parser.add_argument('--model_path', default='', help='path to model')
-parser.add_argument('--seed', default=3292666, type=int, help='manual seed')
-parser.add_argument('--past_frames', type=int, default=10, help='# context frames')
-parser.add_argument('--future_frames', type=int, default=10, help='# predicted frames')
+class eval():
 
-opt = parser.parse_args()
-device = torch.device(f"cuda" if torch.cuda.is_available() else "cpu")
+    def __init__(self, model_path, batch_size = 16, past_frames=10, future_frames=10) -> None:
 
+        self.batch_size = batch_size
+        self.past_frames = past_frames
+        self.future_frames = future_frames    
+        self.device = torch.device(f"cuda" if torch.cuda.is_available() else "cpu")
+        saved_model = torch.load(model_path,map_location=self.device)
 
-BATCH_SIZE = opt.batch_size
-saved_model = torch.load(opt.model_path,map_location=device)
-
-encoder = saved_model['encoder']
-decoder = saved_model['decoder']
-predictor = saved_model['predictor']
-cfg = saved_model['config']
-skip = cfg['architecture']['skip']
-predictor.eval()
-encoder.eval()
-decoder.eval()
-predictor.convlstm1.batch_size = opt.batch_size
-predictor.convlstm2.batch_size = opt.batch_size
-predictor.convlstm3.batch_size = opt.batch_size
+        self.encoder = saved_model['encoder']
+        self.decoder = saved_model['decoder']
+        self.predictor = saved_model['predictor']
+        self.cfg = saved_model['config']
+        skip = self.cfg['architecture']['skip']
+        dataset = self.cfg['data']['dataset']
+        self.predictor.eval()
+        self.encoder.eval()
+        self.decoder.eval()
+        self.save_path = self.cfg['experiment']['id']
+        self.predictor.convlstm1.batch_size = self.batch_size
+        self.predictor.convlstm2.batch_size = self.batch_size
+        self.predictor.convlstm3.batch_size = self.batch_size
 
 
-"""loading datasets"""
+        """loading datasets"""
 
-test_loader = eval_dataset(dataset=opt.dataset,batch_size=opt.batch_size)
+        test_loader = eval_dataset(dataset=dataset,batch_size=self.batch_size)
+        self.len_test_loader = len(test_loader)
+        """setting random seed"""
 
-"""setting random seed"""
+        set_random_seed(random_seed=3292666)
 
-set_random_seed(random_seed=opt.seed)
+        self.eval_sequences = []
 
-@torch.no_grad()
-def generate_future_sequences(test_batch,skip=False):
+        ssim = []
+        lpips_ = []
+        psnr= []
+        mse = []
+        mae = []
+        # fvd_ = []
+        seqs_ = []
+        all_gen = []
+        loss_fn_vgg = lpips.LPIPS(net='vgg').to(self.device)
 
-    """ Generating a bunch of images using current state of generator """
-    
-    predictor.init_hidden_states()
-    gt_seq = []
-    pred_seq = []
-    x_input = test_batch[0]
-    for i in range(1, opt.past_frames+opt.future_frames):
+        for i,seqs in tqdm(enumerate(test_loader),total =len(test_loader)):
+            
+            seqs = seqs.to(self.device)
+
+            gt_seq,pred_seq = self.generate_future_sequences(seqs,skip=skip)
+            lpips_seq, ssim_seq, psnr_seq, mse_seq, mae_seq = calculate_metrices(gt_seq,pred_seq,self.device,loss_fn_vgg=loss_fn_vgg)
+            lpips_.append(lpips_seq)
+            ssim.append(ssim_seq)
+            psnr.append(psnr_seq)
+            mse.append(mse_seq)
+            mae.append(mae_seq)
+            # fvd_.append(calculate_fvd(gt_seq,pred_seq))
+            seqs_.append(seqs.cpu().numpy())
+            all_gen.append(np.concatenate((gt_seq.cpu().numpy(),pred_seq.cpu().numpy()),axis=0))
+
+            # self.eval_sequences.append([seqs.cpu().numpy(),np.concatenate((gt_seq.cpu().numpy(),pred_seq.cpu().numpy()),axis=0)])
+
+        # eval_sequences = torch.stack(eval_seq)
+        self.eval_sequences = [np.concatenate(seqs_,axis=1),np.concatenate(all_gen,axis=1)]
+        self.lpips_ = np.concatenate((lpips_))
+        self.ssim   = np.concatenate((ssim))
+        self.mse    = np.concatenate((mse))
+        self.mae    = np.concatenate((mae))
+        self.psnr   = np.concatenate((psnr))
+        # self.fvd_   = np.array(fvd_)
+
+    @torch.no_grad()
+    def generate_future_sequences(self, test_batch,skip=False):
+
+        """ Generating a bunch of images using current state of generator """
         
-        encoded_skips = encoder(x_input)
+        self.predictor.init_hidden_states()
+        gt_seq = []
+        pred_seq = []
+        x_input = test_batch[0]
+        for i in range(1, self.past_frames+self.future_frames):
             
-        if i < opt.past_frames:
-            
-            predictor(encoded_skips)
-            x_input = test_batch[i]
-            
-
-        else:
-
-            lstm_outputs = predictor(encoded_skips)
-            if not skip:
-
-                x_input = decoder(lstm_outputs)
+            encoded_skips = self.encoder(x_input)
+                
+            if i < self.past_frames:
+                self.predictor(encoded_skips)
+                x_input = test_batch[i]
             else:
-                x_input = decoder([encoded_skips,lstm_outputs])
-            gt_seq.append(test_batch[i])
-            pred_seq.append(x_input)
+                lstm_outputs = self.predictor(encoded_skips)
+                x_input = self.decoder([encoded_skips,lstm_outputs])
+                gt_seq.append(test_batch[i])
+                pred_seq.append(x_input)
+        
+        gt_seq = torch.stack(gt_seq)
+        pred_seq = torch.stack(pred_seq)
+        
+        return gt_seq,pred_seq
     
+    def visualize_best_metrices(self):
+
+        best_lpips_index = np.argmin(np.mean(self.lpips_, axis=1))
+        best_ssim_index = np.argmax(np.mean(self.ssim, axis=1))
+        best_psnr_index = np.argmax(np.mean(self.psnr, axis=1))
+        best_mse_index = np.argmin(np.mean(self.mse, axis=1))
+        best_mae_index = np.argmin(np.mean(self.mae, axis=1))
+
+        indexes = [best_lpips_index, best_ssim_index, best_psnr_index, best_mse_index, best_mae_index]
+        gt = [torch.from_numpy(self.eval_sequences[0][:,indx]) for indx in indexes]
+        gt = torch.stack(gt)
+
+        pred = [torch.from_numpy(self.eval_sequences[1][:,indx]) for indx in indexes]
+        pred = torch.stack(pred)
+        
+        save_grid_batch(gt, pred, batch_first= True,text = f"{self.save_path}", show = True)
     
-    gt_seq = torch.stack(gt_seq)
-    pred_seq = torch.stack(pred_seq)
+    def visualize_best_fvd_batch(self):
+
+        best_fvd_batch = np.argmin(self.fvd_)
+        batch_start_indx = best_fvd_batch * self.batch_size
+        batch_end_index = (best_fvd_batch + 1) * self.batch_size
+        batch = self.eval_sequences[batch_start_indx  : batch_end_index]
+
+        gt = [torch.from_numpy(self.eval_sequences[indx][0]) for indx in batch]
+        gt = torch.cat(gt, dim=1)
+
+        pred = [torch.from_numpy(self.eval_sequences[indx][1]) for indx in batch]
+        pred = torch.cat(pred, dim=1) 
+
+        save_grid_batch(gt, pred, nsamples=5, text = "best_fvd", show = True)
+
+    def save_data(self):
+        lpips_avg = np.mean(self.lpips_, axis = 0)
+        ssim_avg = np.mean(self.ssim, axis = 0)
+        psnr_avg = np.mean(self.psnr, axis = 0)
+        mse_avg = np.mean(self.mse, axis = 0)
+        mae_avg = np.mean(self.mae, axis = 0)
+
+        avg_metrices = np.stack((lpips_avg, ssim_avg, psnr_avg, mse_avg, mae_avg))
+
+        np.savetxt(f"plots/{self.save_path}.txt",avg_metrices)
+
     
-    return gt_seq,pred_seq
 
-
-
-"""generating sequences"""
-
-eval_sequences = []
-
-ssim = []
-lpips_ = []
-psnr= []
-mse = []
-mae = []
-loss_fn_vgg = lpips.LPIPS(net='vgg').to(device)
-
-for i,seqs in tqdm(enumerate(test_loader),total =len(test_loader)):
-    
-    seqs = seqs.to(device)
-
-    gt_seq,pred_seq = generate_future_sequences(seqs,skip=skip)
-    
-    lpips_seq, ssim_seq, psnr_seq, mse_seq, mae_seq = eval_seq(gt_seq,pred_seq,device,loss_fn_vgg=loss_fn_vgg)
-    lpips_.append(lpips_seq)
-    ssim.append(ssim_seq)
-    psnr.append(psnr_seq)
-    mse.append(mse_seq)
-    mae.append(mae_seq)
-    eval_sequences.append([seqs.cpu().numpy(),np.concatenate((gt_seq.cpu().numpy(),pred_seq.cpu().numpy()),axis=0)])
-
-# eval_sequences = torch.stack(eval_seq)
-lpips_ = np.concatenate((lpips_))
-ssim   = np.concatenate((ssim))
-mse    = np.concatenate((mse))
-mae    = np.concatenate((mae))
-psnr   = np.concatenate((psnr))
