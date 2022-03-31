@@ -19,6 +19,11 @@ def normalize_data(dtype, sequence):
     
     return sequence_input(sequence, dtype)
 
+def count_model_params(model):
+    """ Counting the number of learnable parameters in a nn.Module """
+    num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    return num_params
+    
 def set_random_seed(random_seed):
     """credit: angel"""
     """

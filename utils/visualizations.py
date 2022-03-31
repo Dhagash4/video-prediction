@@ -150,6 +150,8 @@ def save_gif_batch(real_batch, pred_batch=None,  nsamples = 5, text=None, batch_
     for i in range(nsamples):
         video = real_batch[:,i,:]
         # imageio.mimsave(os.path.join(temp_path, f"full_frames{i+1}.gif"),video.astype(np.uint8),"GIF",fps=5)
+        if pred_batch is None:
+            imageio.mimsave(os.path.join(temp_path, f"past_frames{i+1}_{text}.gif"),video[:10].astype(np.uint8),"GIF",fps=5)
         imageio.mimsave(os.path.join(temp_path, f"past_frames{i+1}_{text}.gif"),video[:10].astype(np.uint8),"GIF",fps=5)
         imageio.mimsave(os.path.join(temp_path,f"future_frames{i+1}_{text}.gif"),video[10:].astype(np.uint8),"GIF",fps=5)
         if pred_batch is not None:
@@ -175,7 +177,7 @@ def save_gif_batch(real_batch, pred_batch=None,  nsamples = 5, text=None, batch_
         print("------------Past Frames (First 10 frames of the sequence)----------------")
         display(HBox(past))
 
-        print("------------actual Frames (Next 10 frames of the sequence)----------------")
+        print("------------Future Frames (Next 10 frames of the sequence)----------------")
         display(HBox(future))
 
         if pred_batch is not None:
