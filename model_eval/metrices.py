@@ -8,8 +8,6 @@ from sklearn.metrics import mean_absolute_error as mae
 import numpy as np
 from torchvision import transforms
 import lpips
-
-
 import tensorflow.compat.v1 as tf
 
 import model_eval.fvd_video_distance as fvd
@@ -49,7 +47,7 @@ def calculate_fvd(gt_seq, pred_seq) -> float:
         fake = torch_to_tf(pred_seq)
 
         result = fvd.calculate_fvd(
-            fvd.create_id3_embedding(fvd.preprocess(real, (224, 224))),  # (224, 224) required to match model input
+            fvd.create_id3_embedding(fvd.preprocess(real, (224, 224))),  
             fvd.create_id3_embedding(fvd.preprocess(fake, (224, 224))))
 
         with tf.compat.v1.Session() as sess:
@@ -62,7 +60,7 @@ def calculate_fvd(gt_seq, pred_seq) -> float:
 
 def calculate_metrices(gt_seq, pred_seq, device,loss_fn_vgg,batch_first = False):
     
-    # if sequence is (bs, seq_len, nc, h, w) i.e batch first => make seq first
+    
     if batch_first:
         gt_seq = gt_seq.permute(1,0,2,3,4)
         pred_seq = pred_seq.permute(1,0,2,3,4)
@@ -72,9 +70,6 @@ def calculate_metrices(gt_seq, pred_seq, device,loss_fn_vgg,batch_first = False)
     
     seq_len, batch_size, n_channels, _, _ = gt_seq.shape
 
-
-    # loss_fn_alex = lpips.LPIPS(net='alex').to(device) # best forward scores
-    
     lpips_seq =  np.zeros((batch_size, seq_len))
     transform = transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 

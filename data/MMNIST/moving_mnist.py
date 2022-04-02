@@ -1,3 +1,4 @@
+"""credits: https://github.com/edenton/svg/blob/master/data/moving_mnist.py"""
 import numpy as np
 from torchvision import datasets, transforms
 

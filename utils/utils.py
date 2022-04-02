@@ -1,3 +1,4 @@
+"""credits: Angel Villar-Corrales, https://github.com/edenton/svg"""
 import os
 import torch
 from torch.autograd import Variable
@@ -25,7 +26,7 @@ def count_model_params(model):
     return num_params
     
 def set_random_seed(random_seed):
-    """credit: angel"""
+    
     """
     Using random seed for numpy and torch
     """

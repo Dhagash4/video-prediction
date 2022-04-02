@@ -10,7 +10,6 @@ from models.resnet import Resnet18Encoder, Resnet18Decoder
 from models.dcgan import DCGANEncoder, DCGANDecoder
 from models.vgg import VGGEncoder, VGGDecoder
 from utils.utils import load_dataset,set_random_seed
-#device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
 
 @click.command()
 @click.option('--config',
@@ -103,17 +102,8 @@ def main(config):
     else:
         raise ValueError('Unknown optimizer: %s' % optimizer)
 
-
-    """scheduler"""
-
-    # if scheduler == "step":
-    #     scheduler = torch.optim.lr_scheduler.StepLR
-    # else:
-    #     raise ValueError('Unknown scheduler: %s' % optimizer)
-
     """loding datasets"""
     train_loader,val_loader,test_loader = load_dataset(cfg=cfg)
-
 
     """training and logging"""
 

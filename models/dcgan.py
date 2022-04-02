@@ -8,7 +8,6 @@ class ConvBlock(nn.Module):
     def __init__(self, input_channels, output_channels, kernel_size=4, stride = 2, padding = 1):
 
         super(ConvBlock, self).__init__()
-        # convolutional layer
         self.module = nn.Sequential(nn.Conv2d(input_channels, output_channels, kernel_size, stride, padding),
                                     nn.BatchNorm2d(output_channels),
                                     nn.LeakyReLU(0.2, inplace=True))
@@ -24,8 +23,6 @@ class ConvTransposeBlock(nn.Module):
     def __init__(self, input_channels, output_channels, kernel_size=4, stride = 2, padding=1):
 
         super(ConvTransposeBlock, self).__init__()
-        # convolutional layer
-        # nn.ConvTranspose2d()
         self.module = nn.Sequential(nn.ConvTranspose2d(input_channels, output_channels, kernel_size, stride, padding),
                                     nn.BatchNorm2d(output_channels),
                                     nn.LeakyReLU(0.2, inplace=True))

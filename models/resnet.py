@@ -113,8 +113,7 @@ class ResidualBlockDecoder(nn.Module):
 
         self.upsample = None
         if upsample:
-            # self.conv1 = nn.ConvTranspose2d(in_channels=input_channels, out_channels=output_channels, kernel_size=3, padding=1,  output_padding=1, stride=2, bias = False)
-            # self.bn1 = nn.BatchNorm2d(output_channels)
+
             self.upsample = nn.Sequential(nn.ConvTranspose2d(in_channels=input_channels, out_channels=output_channels, kernel_size=3, padding=1,  output_padding=1, stride=2, bias = False),
                                           nn.BatchNorm2d(output_channels))
 

@@ -14,6 +14,7 @@
 # limitations under the License.
 
 # Lint as: python2, python3
+"""credits: https://github.com/google-research/google-research/tree/master/frechet_video_distance"""
 """Minimal Reference implementation for the Frechet Video Distance (FVD).
 
 FVD is a metric for the quality of video generation models. It is inspired by

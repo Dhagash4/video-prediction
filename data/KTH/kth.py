@@ -24,8 +24,6 @@ class KTH(Dataset):
         self.transform = transform
         self.seed_set = False
 
-        # self.data= {}
-
         if not os.path.exists(os.path.join(data_dir,"kth")):
             subprocess.call(['sh' , './' + os.path.join(data_dir,'download_kth.sh')])
             subprocess.call(['python', os.path.join(data_dir,'preprocess_kth.py')])
@@ -44,15 +42,8 @@ class KTH(Dataset):
             self.videos = pickle.load(open(os.path.join(data_dir,"kth/test.p"), "rb")) 
             data_type = 'test'
                 
-        #for all sequences
         self.sequences, self.labels = self.create_sequences()
-        
-        # for infinite generation
-#         for c in self.classes:
-#             self.data[c] = []
-#         for i in range(len(self.videos)):
-#             category = self.videos[i]["category"] 
-#             self.data[category].append(self.videos[i]["frames"])
+
     
     def create_sequences(self):
         
@@ -82,7 +73,7 @@ class KTH(Dataset):
     
     def get_sequence(self):
         t = self.seq_len
-        while True: # skip seqeunces that are too short
+        while True:
             c_idx = np.random.randint(len(self.classes))
             c = self.classes[c_idx]
             vid_idx = np.random.randint(len(self.data[c]))
@@ -90,14 +81,11 @@ class KTH(Dataset):
             seq_idx = np.random.randint(len(vid))
             if seq_idx - t >= 0:
                 break
-#         dname = '%s/%s/%s' % (self.data_root, c, vid['vid'])
         st = random.randint(0, seq_idx-t)
 
 
         seq = [] 
         for i in range(st, st+t):
-#             fname = '%s/%s' % (dname, vid['files'][seq_idx][i])
-#             im = misc.imread(fname)/255.
             im = vid[i]
             seq.append(im.reshape(self.image_size, self.image_size, 1))
         return np.array(seq)
@@ -109,13 +97,6 @@ class KTH(Dataset):
         }
 
         return sample          
-                   
-#         if not self.seed_set:
-#             self.seed_set = True
-#             random.seed(index)
-#             np.random.seed(index)
-#             #torch.manual_seed(index)
-#         return torch.from_numpy(self.get_sequence())
 
     def __len__(self):
         return len(self.sequences)
@@ -126,15 +107,15 @@ def get_KTH(data_dir, batch_size = 40, seq_first=True, frame_skip=5, device = "c
     batch_size=batch_size
     
 
-    # Train, Test, Validation splits
+    """Train, Test, Validation splits"""
+
     train_data = KTH(data_dir, train = True, val = False, frame_skip=frame_skip)       
     val_data = KTH(data_dir, train = False, val = True)        
     test_data = KTH(data_dir, train = False, val = False)       
 
     def collate(batch):
 
-        # Add channel dim, scale pixels between 0 and 1, 
-        # batch = torch.tensor(batch).unsqueeze(1)
+        
         labels = []
         seqs = []
         for i in range(len(batch)):
@@ -149,15 +130,12 @@ def get_KTH(data_dir, batch_size = 40, seq_first=True, frame_skip=5, device = "c
             seqs = seqs.permute(1,0,2,3,4)    
         return seqs  
         
-    # Training Data Loader
     train_loader = DataLoader(train_data, shuffle=True, 
                             batch_size=batch_size, collate_fn=collate, drop_last=True,num_workers = num_workers)
 
-    # Validation Data Loader
     val_loader = DataLoader(val_data, shuffle=True, 
                             batch_size=batch_size, collate_fn=collate, drop_last=True,num_workers = num_workers)                        
 
-    # Test Data Loader
     test_loader = DataLoader(test_data, shuffle=True, 
                             batch_size=batch_size, collate_fn=collate, drop_last=True,num_workers = num_workers)
     

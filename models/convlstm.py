@@ -1,3 +1,4 @@
+"""credits: https://github.com/ndrplz/ConvLSTM_pytorch"""
 import torch
 import torch.nn as nn
 
@@ -104,7 +105,6 @@ class predictor_lstm(nn.Module):
         self.input_dim = input_dim[0] 
         conv_lstms  = []
         self.image_size = input_dim
-        # iterating over no of layers
         for i in range(0, self.num_layers):
             cur_input_dim = self.input_dim if i == 0 else self.hidden_dim[i-1]
 

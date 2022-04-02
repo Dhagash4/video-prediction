@@ -46,8 +46,7 @@ class TrainerBase:
         params = list(self.encoder.parameters()) + list(self.decoder.parameters()) + list(self.predictor.parameters())
         self.model_optimizer = self.optimizer(params,lr=self.lr, betas = (0.9, 0.999))
 
-        # self.model_scheduler = self.scheduler(self.model_optimizer,step_size = self.cfg['train']['step_size'], gamma=self.cfg['train']['gamma'])
-        # self.model_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.model_optimizer,verbose=True)
+
         self.model_scheduler = torch.optim.lr_scheduler.ExponentialLR(self.model_optimizer,gamma=0.9,verbose=True)
 
         if self.loss_type == "mse":
@@ -60,10 +59,7 @@ class TrainerBase:
         
         """ Training all models for one optimization step """
         self.model_optimizer.zero_grad()
-        # self.encoder_optimizer.zero_grad()
-        # self.decoder_optimizer.zero_grad()
-        # self.predictor_optimizer.zero_grad()
-
+        
         self.predictor.init_hidden_states()
         loss = 0
         
@@ -74,9 +70,7 @@ class TrainerBase:
             lstm_outputs = self.predictor(encoded)
         
             x_pred = self.decoder([encoded,lstm_outputs])
-            # x_pred = self.decoder(lstm_outputs)
-    
-            # h_prev = self.encoder(x[i])
+            
             if self.loss_type == "mse":
                 loss += self.loss(x_pred,x[i+1])
 
@@ -120,7 +114,6 @@ class TrainerBase:
 
                 lstm_outputs = self.predictor(encoded_skips)
                 x_input = self.decoder([encoded_skips,lstm_outputs])
-                # x_input = self.decoder(lstm_outputs)
                 all_gen.append(x_input) 
         
        
