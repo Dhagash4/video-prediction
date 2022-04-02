@@ -1,6 +1,3 @@
-# metrices 
-# from skimage.measure import compare_mse, compare_psnr
-from zmq import device
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import peak_signal_noise_ratio as psnr
 from skimage.metrics import mean_squared_error as mse
@@ -8,9 +5,7 @@ from sklearn.metrics import mean_absolute_error as mae
 import numpy as np
 from torchvision import transforms
 import lpips
-import tensorflow.compat.v1 as tf
 
-import model_eval.fvd_video_distance as fvd
 from utils.utils import *
 
 def get_mae(im1, im2):
@@ -40,23 +35,6 @@ def get_psnr(im1, im2):
     im2 = im2.cpu().numpy()
     
     return psnr(im1, im2)
-
-def calculate_fvd(gt_seq, pred_seq) -> float:
-    with tf.Graph().as_default():
-        real = torch_to_tf(gt_seq)
-        fake = torch_to_tf(pred_seq)
-
-        result = fvd.calculate_fvd(
-            fvd.create_id3_embedding(fvd.preprocess(real, (224, 224))),  
-            fvd.create_id3_embedding(fvd.preprocess(fake, (224, 224))))
-
-        with tf.compat.v1.Session() as sess:
-            sess.run(tf.compat.v1.global_variables_initializer())
-            sess.run(tf.compat.v1.tables_initializer())
-            fvd_score = sess.run(result)
-            print("FVD is: %.2f." % fvd_score)
-   
-    return fvd_score
 
 def calculate_metrices(gt_seq, pred_seq, device,loss_fn_vgg,batch_first = False):
     

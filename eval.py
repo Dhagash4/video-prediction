@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from tqdm import tqdm
-from model_eval.metrices import calculate_fvd, calculate_metrices
+from model_eval.metrices import calculate_metrices
 from utils.utils import eval_dataset, set_random_seed
 from utils.visualizations import save_grid_batch
 
