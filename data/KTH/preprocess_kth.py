@@ -1,3 +1,4 @@
+"""credits: https://github.com/vkhoi/KTH-Action-Recognition/blob/master/main/data_utils.py"""
 import imageio
 import numpy as np
 import os
