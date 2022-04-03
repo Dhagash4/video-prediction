@@ -8,6 +8,7 @@ from IPython.display import display
 import torch
 import torchvision
 from ipywidgets import widgets, HBox, VBox, Layout, Box
+from torch.autograd import Variable
 
 
 def save_pred_gifs(pred_batch, nsamples=5, text=None, batch_first=False, show=False):
@@ -35,6 +36,7 @@ def save_pred_gifs(pred_batch, nsamples=5, text=None, batch_first=False, show=Fa
 
         print("------------predicted Frames (predicted 10 frames of the sequence)----------------")
         display(HBox(pred))
+
 
 
 def save_grid_batch(real_batch, pred_batch=None, nsamples=5, text=None, batch_first=False, show=False):
@@ -121,6 +123,30 @@ def show_grid(real_batch, pred_batch=None, nsamples=5, batch_first=False, pred_f
 
     return grid
 
+def add_border(video, color, pad=4):
+    paddded_video = []
+    video = video.unsqueeze(1)
+
+    for i in range(video.shape[0]):
+        x = video[i]
+        w = x.size()[1]
+        nc = x.size()[0]
+        px = Variable(torch.zeros(3, w+2*pad, w+2*pad))
+        if color == 'red':
+            px[0] =0.7 
+        elif color == 'green':
+            px[1] = 0.7
+        if nc == 1:
+            for c in range(3):
+                px[c, pad:w+pad, pad:w+pad] = x
+        else:
+            px[:, pad:w+pad, pad:w+pad] = x
+        
+        paddded_video.append(px)
+
+    paddded_video = torch.stack(paddded_video)
+
+    return paddded_video.squeeze(1).permute(0,2,3,1)
 
 def save_gif_batch(real_batch, pred_batch=None,  nsamples=5, text=None, batch_first=False, show=False):
     '''
@@ -130,30 +156,36 @@ def save_gif_batch(real_batch, pred_batch=None,  nsamples=5, text=None, batch_fi
     if batch_first:
         real_batch = real_batch.permute(1, 0, 2, 3, 4)
     # Reverse process before displaying
-    real_batch = real_batch.cpu().numpy() * 255.0
+    real_batch = real_batch.cpu().numpy()
     real_batch = real_batch.squeeze(2)
 
     if pred_batch is not None:
         if batch_first:
             pred_batch = pred_batch.permute(1, 0, 2, 3, 4)
 
-        pred_batch = pred_batch.cpu().numpy() * 255.0
+        pred_batch = pred_batch.cpu().numpy()
         pred_batch = pred_batch.squeeze(2)
 
     result_path = os.path.join(os.getcwd(), "results")
     if not os.path.exists(result_path):
         os.mkdir(result_path)
-
-    for i in range(nsamples):
-        video = real_batch[:, i, :]
     
+    
+    for i in range(nsamples):
+        all = []
+        video = real_batch[:, i, :]
+        video = add_border(torch.from_numpy(video),color="green").cpu().numpy() * 255.0
         imageio.mimsave(os.path.join(result_path, f"past_frames{i+1}_{text}.gif"), video[:10].astype(np.uint8), "GIF", fps=5)
         imageio.mimsave(os.path.join(result_path, f"future_frames{i+1}_{text}.gif"), video[10:].astype(np.uint8), "GIF", fps=5)
-        
+        all.append(video[:10])
         if pred_batch is not None:
             video = pred_batch[:, i, :]
+            video = add_border(torch.from_numpy(video),color="red").cpu().numpy() * 255.0
+            all.append(video[10:])
             imageio.mimsave(os.path.join(result_path, f"predicted_frames{i+1}_{text}.gif"), video[10:].astype(np.uint8), "GIF", fps=5)
-
+            all = np.concatenate(all)
+            imageio.mimsave(os.path.join(result_path, f"all_frames{i+1}_{text}.gif"), all.astype(np.uint8), "GIF", fps=5)
+        
     if show:
         pred = []
         past = []
@@ -164,13 +196,13 @@ def save_gif_batch(real_batch, pred_batch=None,  nsamples=5, text=None, batch_fi
             if pred_batch is not None:
                 pred.append(widgets.Image(value=open(os.path.join(
                     result_path, f"predicted_frames{i+1}_{text}.gif"), 'rb').read()))
-
-        print("------------Past Frames (First 10 frames of the sequence)----------------")
+        
+        print("------------Context Frames (First 10 frames of the sequence)----------------")
         display(HBox(past))
 
-        print("------------Future Frames (Next 10 frames of the sequence)----------------")
+        print("------------Future Ground Truth Frames (Next 10 frames of the sequence)----------------")
         display(HBox(future))
 
         if pred_batch is not None:
-            print("------------predicted frames(predicted 10 frames of the sequence)----------------")
+            print("------------Predicted Frames----------------")
             display(HBox(pred))
