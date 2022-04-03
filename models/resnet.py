@@ -1,3 +1,4 @@
+"""credits: https://github.com/julianstastny/VAE-ResNet18-PyTorch/blob/master/model.py"""
 import torch
 import torch.nn as nn
 
