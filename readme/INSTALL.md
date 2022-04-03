@@ -1,6 +1,6 @@
 # Installation
 
-The code was tested on Ubuntu 20.04, with [Anaconda](https://www.anaconda.com/products/distribution) Python 3.9 and PyTorch. NVIDIA GPUs are needed for both training and testing.
+The code was tested on Ubuntu 20.04, with [Anaconda](https://www.anaconda.com/products/distribution) Python 3.9 and PyTorch 1.10.2. NVIDIA GPUs are needed for both training and testing.
 
 After installing Anaconda:
 

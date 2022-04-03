@@ -81,7 +81,7 @@ KTH
 
 ## Contact
 
-Amit Rana (amit.rana@rwth-aachen.de), Dhagash Desai (dhagash.desai@uni-bonn.de), Lina Hashem (lina.gamal.hashem@gmail.com)
+Amit Rana (amit.rana@rwth-aachen.de), Dhagash Desai (dhagash.desai@uni-bonn.de)
 
 
 ## Credits

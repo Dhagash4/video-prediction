@@ -6,7 +6,6 @@ from torch.utils.data import DataLoader
 from data.MMNIST.mmnist import MMNIST
 from data.MMNIST.moving_mnist import MovingMNIST
 from data.KTH.kth import get_KTH
-import tensorflow as tf
 import random
 import numpy as np
 
@@ -38,13 +37,6 @@ def set_random_seed(random_seed):
     torch.manual_seed(random_seed)
     torch.cuda.manual_seed_all(random_seed)
     return
-
-
-def torch_to_tf(torch_tensor: torch.FloatTensor) -> tf.Tensor:
-    torch_tensor = torch_tensor.permute([1, 0, 3, 4, 2]).expand(-1,-1,-1,-1,3)  # channels last
-    np_tensor = torch_tensor.detach().cpu().numpy()
-    tf_tensor = tf.convert_to_tensor(np_tensor)
-    return tf_tensor
 
 def load_dataset(cfg):
         
