@@ -1,3 +1,4 @@
+"""credits: https://github.com/vkhoi/KTH-Action-Recognition/blob/master/main/data_utils.py"""
 from __future__ import print_function, division
 
 import os
